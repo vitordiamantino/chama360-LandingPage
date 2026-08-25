@@ -1,0 +1,13 @@
+node_modules/
+.vercel/
+
+# Credenciais. Nenhuma variante de .env pode subir: o gitignore genérico costuma
+# esquecer .env.local e .env.production, e é justamente onde a chave costuma estar.
+.env
+.env.*
+!.env.example
+*.pem
+*service-account*.json
+
+# Capturas do verificar-visual: artefato local, regerado a qualquer momento
+_capturas/

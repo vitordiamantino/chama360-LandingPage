@@ -1,0 +1,114 @@
+/* Estilos do quiz da CHAMA 360.
+ *
+ * Compartilhado por duas páginas de propósito: o funil dedicado (index.html) e o bloco embutido
+ * no institucional (sobre.html). São dois pontos de entrada para o mesmo quiz, e a comparação
+ * entre eles é o teste. Manter o estilo num arquivo só evita que as duas versões divirjam
+ * visualmente e contaminem essa comparação.
+ *
+ * Depende dos tokens (--paper, --flame, --ink, --serif, --sans) que as duas páginas já definem
+ * no :root. Este arquivo não redefine nenhum deles.
+ */
+
+  /* cartão do funil */
+  .quiz-cartao{
+    background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--sombra);margin:28px 0 8px;overflow:hidden;
+  }
+  .quiz-cartao-corpo{padding:26px 24px 24px;}
+
+  .barra{height:3px;background:var(--paper-3);}
+  .barra-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--flame));width:14%;transition:width .28s ease;}
+
+  .passo{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:10px;}
+  .pergunta{font-size:clamp(21px,3.4vw,28px);line-height:1.2;margin:0 0 6px;}
+  .ajuda{font-size:14px;color:var(--ink-mute);margin:0 0 18px;}
+  .ajuda[hidden]{display:none;}
+
+  .opcoes{list-style:none;display:grid;gap:9px;margin:16px 0 0;padding:0;}
+  .opcao{
+    width:100%;text-align:left;font:inherit;font-size:16px;color:var(--ink);
+    background:var(--paper);border:1.5px solid var(--line);border-radius:11px;
+    padding:14px 16px;cursor:pointer;transition:border-color .14s,background .14s,transform .06s;
+  }
+  .opcao:hover{border-color:var(--flame);background:#fff;}
+  .opcao:active{transform:translateY(1px);}
+  .opcao.selecionada{border-color:var(--flame);background:#FFF6EF;box-shadow:inset 0 0 0 1px var(--flame);font-weight:500;}
+  .opcao:focus-visible{outline:2px solid var(--flame-deep);outline-offset:2px;}
+
+  .acoes{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px;}
+  .btn-quiz{
+    font:inherit;font-weight:600;font-size:16px;border:none;border-radius:11px;
+    padding:14px 26px;cursor:pointer;text-decoration:none;display:inline-flex;
+    align-items:center;justify-content:center;gap:9px;transition:filter .14s,opacity .14s;
+  }
+  .btn-primario{background:var(--flame);color:#fff;}
+  .btn-primario:hover{filter:brightness(1.06);}
+  .btn-primario:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+  .btn-texto{background:none;color:var(--ink-mute);padding:14px 4px;font-weight:500;font-size:15px;}
+  .btn-texto:hover{color:var(--ink);}
+  .btn-texto[hidden]{display:none;}
+  .btn-zap{background:var(--ok);color:#fff;font-size:17px;padding:17px 30px;width:100%;}
+  .btn-zap:hover{filter:brightness(1.07);}
+
+  /* captura */
+  .campo{display:block;margin-bottom:14px;}
+  .campo span{display:block;font-size:14px;font-weight:500;color:var(--ink-soft);margin-bottom:6px;}
+  .campo input{
+    width:100%;font:inherit;font-size:16px;padding:14px 15px;
+    border:1.5px solid var(--line);border-radius:11px;background:var(--paper);color:var(--ink);
+  }
+  .campo input:focus{outline:none;border-color:var(--flame);background:#fff;}
+  .erro{color:var(--ember);font-size:14px;margin:0 0 12px;font-weight:500;}
+  .erro[hidden]{display:none;}
+  .privacidade{font-size:13px;color:var(--ink-mute);margin:14px 0 0;line-height:1.5;}
+  .privacidade a{color:var(--ink-soft);}
+
+  /* diagnóstico */
+  .diag-topo{background:var(--ink);color:var(--paper);padding:24px;}
+  .diag-topo h2{font-size:clamp(23px,3.8vw,32px);color:#fff;}
+  .diag-topo p{margin:10px 0 0;color:rgba(250,247,242,.76);font-size:16px;max-width:56ch;}
+  .vazamentos{list-style:none;margin:0;padding:0;}
+  .vazamento{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--line-soft);}
+  .vazamento:last-child{border-bottom:none;}
+  .vaz-n{
+    flex:0 0 26px;height:26px;border-radius:50%;background:var(--flame-deep);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-top:2px;
+  }
+  .vazamento h3{font-size:19px;margin:0 0 5px;}
+  .vazamento p{margin:0;color:var(--ink-soft);font-size:15.5px;}
+
+  .codigo{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    background:var(--paper-2);border-radius:11px;padding:13px 16px;margin:20px 0 0;font-size:14px;color:var(--ink-soft);
+  }
+  .codigo b{font-family:var(--serif);font-size:22px;color:var(--flame-deep);letter-spacing:.02em;}
+
+  /* vsl */
+  .vsl{margin:26px 0 0;}
+  .vsl h3{font-size:20px;margin:0 0 4px;}
+  .vsl .cap{font-size:14.5px;color:var(--ink-mute);margin:0 0 14px;}
+  .player{
+    position:relative;aspect-ratio:16/9;width:100%;border-radius:12px;overflow:hidden;
+    background:linear-gradient(150deg,#171310,#241a12 55%,#33200f);
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:22px;
+  }
+  .player .placeholder{color:rgba(250,247,242,.62);font-size:14.5px;max-width:34ch;line-height:1.5;}
+  .player .play{
+    width:58px;height:58px;border-radius:50%;background:rgba(250,247,242,.1);
+    border:1.5px solid rgba(250,247,242,.28);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+  }
+  .player .play:after{content:"";border-left:15px solid rgba(250,247,242,.62);border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px;}
+  .player video,.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+
+  .fechamento{margin:24px 0 0;}
+  .fechamento p{margin:0 0 16px;font-size:16.5px;color:var(--ink-soft);}
+  .garantia{font-size:13.5px;color:var(--ink-mute);text-align:center;margin:12px 0 0;}
+  .saida{
+    display:block;text-decoration:none;margin:22px 0 0;padding:15px 17px;
+    background:var(--paper-2);border:1px solid var(--line);border-radius:11px;
+    transition:border-color .14s,background .14s;
+  }
+  .saida:hover{border-color:var(--flame);background:#FFF6EF;}
+  .saida-t{display:block;font-weight:600;font-size:15.5px;color:var(--ink);margin-bottom:3px;}
+  .saida-t:after{content:" →";color:var(--flame-deep);}
+  .saida-s{display:block;font-size:14px;color:var(--ink-mute);line-height:1.45;}
