@@ -9,7 +9,7 @@
 // que medindo, e uma tag incompleta faz o número parecer real sem ser.
 
 window.MEDICAO = {
-  ga4: '',      // ex.: G-XXXXXXXXXX
+  ga4: 'G-PD9HENWP60',  // property CHAMA 360 | Site
   pixel: '',    // ex.: 123456789012345
   clarity: 'y8gz8epb71',  // projeto CHAMA 360 no Microsoft Clarity
 };
