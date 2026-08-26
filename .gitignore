@@ -11,3 +11,5 @@ node_modules/
 
 # Capturas do verificar-visual: artefato local, regerado a qualquer momento
 _capturas/
+.vercel
+.env*

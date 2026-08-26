@@ -11,7 +11,7 @@
 window.MEDICAO = {
   ga4: '',      // ex.: G-XXXXXXXXXX
   pixel: '',    // ex.: 123456789012345
-  clarity: '',  // ex.: abcdefghij
+  clarity: 'y8gz8epb71',  // projeto CHAMA 360 no Microsoft Clarity
 };
 
 (function () {
