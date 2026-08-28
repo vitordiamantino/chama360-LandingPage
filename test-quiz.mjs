@@ -553,6 +553,29 @@ teste('a verificação do Search Console sobrevive à troca de páginas', () => 
   });
 });
 
+teste('os três planos do site batem com a estrutura oficial', () => {
+  // O Fogo ficou dois meses no site a R$ 2.487 depois de ter sido reajustado para R$ 2.500 no
+  // doc-fonte, e ninguém viu. Preço divergente no site é o erro mais caro que uma página de
+  // planos comete: o lead entra na reunião com um número que a proposta não confirma.
+  const html = fs.readFileSync('sobre.html', 'utf8');
+  const planos = [
+    { nome: 'Brasa', preco: '447' },
+    { nome: 'Chama', preco: '747' },
+    { nome: 'Fogo',  preco: '2.500' },
+  ];
+  // Lê o texto de cada card em vez de adivinhar a marcação: o emoji vive dentro de um <span>
+  // próprio, e uma regex que assume a estrutura quebra ao primeiro ajuste de layout.
+  const nomesNoSite = [...html.matchAll(/class="plan-name"[^>]*>([\s\S]*?)<\/div>/g)]
+    .map((m) => m[1].replace(/<[^>]*>/g, '').trim());
+  planos.forEach(({ nome, preco }) => {
+    assert.ok(nomesNoSite.some((n) => n.includes(nome)),
+      `o card do plano ${nome} sumiu da página. Achei: ${nomesNoSite.join(', ')}`);
+    assert.ok(html.includes(`>${preco}<`), `o preço de ${preco} não aparece: o plano ${nome} está com valor divergente`);
+  });
+  assert.ok(html.includes('Somente contrato anual'),
+    'o Brasa só existe em contrato anual, e isso precisa estar visível no card, não em letra miúda');
+});
+
 teste('nenhuma página aponta para imagem que não existe', () => {
   ['index.html', 'sobre.html', 'privacidade.html', 'termos.html'].forEach((f) => {
     const refs = [...fs.readFileSync(f, 'utf8').matchAll(/(?:src|href)="(assets\/[^"]+)"/g)];

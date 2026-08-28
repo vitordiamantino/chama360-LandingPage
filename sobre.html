@@ -60,10 +60,11 @@
       "description": "Central de atendimento e CRM por conversas sobre a API Oficial do WhatsApp, com automações, agentes de IA e painel de acompanhamento.",
       "publisher": { "@id": "https://chama360.vercel.app/#organizacao" },
       "offers": {
-        "@type": "Offer",
-        "name": "Plano Chama",
-        "price": "747.00",
+        "@type": "AggregateOffer",
         "priceCurrency": "BRL",
+        "lowPrice": "447.00",
+        "highPrice": "2500.00",
+        "offerCount": 3,
         "availability": "https://schema.org/InStock",
         "url": "https://chama360.vercel.app/sobre#planos"
       }
@@ -80,7 +81,7 @@
         {
           "@type": "Question",
           "name": "Serve para empresa pequena ou só grande operação?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Serve para os dois. O plano Chama, a partir de R$ 747/mês, já cobre CRM, IA e dashboard para quem está estruturando o atendimento. O plano Fogo escala até 10 usuários e 20 chatbots para operações maiores. Você começa no seu momento e cresce na plataforma." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Serve para os dois. O plano Brasa, a R$ 447/mês em contrato anual, entrega API Oficial e CRM organizados para quem está começando. O plano Chama, a R$ 747/mês, acrescenta IA, campanhas e o dashboard da ORL360. E o Fogo escala até 10 usuários e 20 chatbots para operações maiores. Você começa no seu momento e cresce na plataforma." }
         },
         {
           "@type": "Question",
@@ -1034,6 +1035,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>
             <div><strong>Retenção e reativação da base</strong><span>Sequências e campanhas trazem de volta quem já comprou.</span></div>
           </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>
+            <div><strong>Dashboard próprio, montado pela ORL360</strong><span>Um painel no Looker Studio ligado ao seu funil, com os números da operação em um lugar só. Incluso nos planos Chama e Fogo.</span></div>
+          </li>
         </ul>
       </div>
     </div>
@@ -1133,10 +1138,34 @@
     <div class="pricing-head">
       <span class="section-label">Os planos</span>
       <h2>Escolha o plano ideal para o <em>momento do seu negócio</em>.</h2>
-      <p>2 planos para cada momento do seu negócio. Ambos incluem API Oficial do WhatsApp, suporte dedicado BR e 30 dias de garantia total.</p>
+      <p>3 planos para cada momento do seu negócio. Todos incluem API Oficial do WhatsApp, suporte dedicado BR e 30 dias de garantia total.</p>
     </div>
 
-    <div class="plans plans-2">
+    <div class="plans">
+      <!-- BRASA - entrada. Só existe em contrato anual, e isso precisa estar visível antes do
+           preço: é a condição que difere este plano dos outros dois, não uma letra miúda. -->
+      <div class="plan">
+        <div class="plan-badge">Porta de entrada</div>
+        <div class="plan-name"><span class="flame-icon">🔥</span>Brasa</div>
+        <div class="plan-desc">API Oficial e CRM organizados, com fidelidade de 12 meses.</div>
+        <div class="plan-price"><span class="plan-currency">R$</span>447<span style="font-size: 22px;">,00</span><small> /mês</small></div>
+        <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--flame-bright); margin-top: 8px;">Somente contrato anual</div>
+        <hr>
+        <ul class="plan-features">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg><span><b>2</b> usuários</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg><span><b>2</b> chatbots de atendimento + 4 de automação</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg><span>CRM + Funil Kanban</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg><span>WhatsApp API Oficial</span></li>
+          <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg><span>Agentes de IA</span></li>
+          <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg><span>Campanhas &amp; Disparos</span></li>
+          <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg><span>Automação ManyChat</span></li>
+          <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg><span>Dashboard Looker Studio</span></li>
+          <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg><span>Webhook + API</span></li>
+          <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg><span>Script Comercial ORL</span></li>
+        </ul>
+        <a href="https://wa.me/5511981670838?text=Ol%C3%A1%2C%20vi%20sobre%20a%20CHAMA%20e%20quero%20saber%20mais%20sobre%20o%20plano%20Brasa" target="_blank" rel="noopener" class="plan-btn">Começar no Brasa</a>
+      </div>
+
       <!-- CHAMA - featured -->
       <div class="plan featured">
         <div class="plan-badge">⭐ Mais escolhido</div>
@@ -1164,7 +1193,7 @@
         <div class="plan-badge" style="background: linear-gradient(105deg,#FF4500,#FF6B1A); color:#fff; border-color:transparent;">🔥🔥🔥 Premium</div>
         <div class="plan-name">Fogo</div>
         <div class="plan-desc">Operação profissional completa com todos os diferenciais ORL.</div>
-        <div class="plan-price"><span class="plan-currency">R$</span>2.487<span style="font-size: 22px;">,00</span><small> /mês</small></div>
+        <div class="plan-price"><span class="plan-currency">R$</span>2.500<span style="font-size: 22px;">,00</span><small> /mês</small></div>
         <hr>
         <ul class="plan-features">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg><span><b>10</b> usuários</span></li>
@@ -1269,7 +1298,7 @@
         </div>
         <div class="faq-item">
           <button class="faq-q">Serve para empresa pequena ou só grande operação?<span class="faq-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></button>
-          <div class="faq-a"><p>Serve para os dois. O plano Chama, a partir de R$ 747/mês, já cobre CRM, IA e dashboard para quem está estruturando o atendimento. O plano Fogo escala até 10 usuários e 20 chatbots para operações maiores. Você começa no seu momento e cresce na plataforma.</p></div>
+          <div class="faq-a"><p>Serve para os dois. O plano Brasa, a R$ 447/mês em contrato anual, entrega API Oficial e CRM organizados para quem está começando. O plano Chama, a R$ 747/mês, acrescenta IA, campanhas e o dashboard da ORL360. E o Fogo escala até 10 usuários e 20 chatbots para operações maiores. Você começa no seu momento e cresce na plataforma.</p></div>
         </div>
         <div class="faq-item">
           <button class="faq-q">Meu número pode ser bloqueado usando a CHAMA?<span class="faq-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></button>
