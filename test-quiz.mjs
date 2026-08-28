@@ -357,6 +357,16 @@ teste('o FAQ estruturado promete as mesmas perguntas que a página mostra', () =
   });
 });
 
+teste('a verificação do Search Console sobrevive à troca de páginas', () => {
+  // A tag está nas quatro páginas de propósito, e não só na home. O W7 vai trocar qual arquivo
+  // serve a "/", e uma verificação que morasse só no index cairia calada nessa migração: o
+  // Search Console desverifica a propriedade sem avisar, e o sitemap para de ser lido.
+  ['index.html', 'sobre.html', 'privacidade.html', 'termos.html'].forEach((f) => {
+    assert.match(fs.readFileSync(f, 'utf8'), /name="google-site-verification" content="[^"]+"/,
+      `${f} sem a meta de verificação do Search Console`);
+  });
+});
+
 teste('nenhuma página aponta para imagem que não existe', () => {
   ['index.html', 'sobre.html', 'privacidade.html', 'termos.html'].forEach((f) => {
     const refs = [...fs.readFileSync(f, 'utf8').matchAll(/(?:src|href)="(assets\/[^"]+)"/g)];
