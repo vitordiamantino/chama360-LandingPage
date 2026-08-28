@@ -1,0 +1,12 @@
+# CHAMA 360 - produto da ORL360VISAO LTDA
+# Indexação liberada: este domínio é a produção. Se um dia existir um preview público
+# com conteúdo real, ele precisa do próprio robots.txt bloqueando, senão o Google
+# indexa a versão de teste e ela compete com a de produção pela mesma busca.
+
+User-agent: *
+Allow: /
+
+# A rota de gravação do lead não é página: não tem o que indexar e responde só a POST.
+Disallow: /api/
+
+Sitemap: https://chama360.vercel.app/sitemap.xml

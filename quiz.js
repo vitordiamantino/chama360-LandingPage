@@ -26,10 +26,23 @@ const estado = {
 
 // Medição. Os três destinos recebem o mesmo evento, e nenhum deles é obrigatório existir:
 // se a tag não estiver instalada, a chamada é ignorada em silêncio.
+//
+// `profissao` é injetada aqui, em TODO evento, e não em cada chamada. É a dimensão que
+// responde "qual nicho converte melhor" e "qual nicho abandona o quiz", e ela decide promoção
+// de camada 2 para camada 1. Passar em cada chamada garante que o próximo evento nasça sem
+// ela e o relatório fique com um buraco silencioso. Antes da pergunta 1 ainda não há resposta.
 function medir(evento, dados = {}) {
-  try { if (typeof window.gtag === 'function') window.gtag('event', evento, dados); } catch (e) { /* medição nunca derruba o funil */ }
-  try { if (typeof window.fbq === 'function') window.fbq('trackCustom', evento, dados); } catch (e) { /* idem */ }
-  try { if (typeof window.clarity === 'function') window.clarity('event', evento); } catch (e) { /* idem */ }
+  const d = { profissao: estado.respostas.profissao || 'nao_informada', ...dados };
+  try { if (typeof window.gtag === 'function') window.gtag('event', evento, d); } catch (e) { /* medição nunca derruba o funil */ }
+  try { if (typeof window.fbq === 'function') window.fbq('trackCustom', evento, d); } catch (e) { /* idem */ }
+  try {
+    if (typeof window.clarity === 'function') {
+      // O Clarity não aceita parâmetro no evento: a profissão entra como tag de sessão, que é
+      // o que permite filtrar as gravações por nicho.
+      window.clarity('set', 'profissao', d.profissao);
+      window.clarity('event', evento);
+    }
+  } catch (e) { /* idem */ }
 }
 
 function el(id) { return document.getElementById(id); }
@@ -220,7 +233,6 @@ function renderDiagnostico() {
   mostrar('diagnostico');
   medir('quiz_diagnostico_visto', {
     vazamentos: vazamentosReais,
-    profissao: prof,
     codigo: estado.codigo,
   });
 }
@@ -317,4 +329,4 @@ export function iniciar() {
 }
 
 // Exportado só para o teste conseguir exercitar a árvore sem browser.
-export const _interno = { normalizarWhatsapp, calcularDiagnostico, estado, gerarCodigo };
+export const _interno = { normalizarWhatsapp, calcularDiagnostico, estado, gerarCodigo, medir };

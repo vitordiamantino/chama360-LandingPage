@@ -6,13 +6,77 @@
 <title>CHAMA 360 - Descubra por onde seu atendimento vaza cliente</title>
 <meta name="description" content="Sete perguntas para descobrir por onde seu negócio perde cliente no WhatsApp. Diagnóstico na hora, sem cadastro longo.">
 <meta name="robots" content="index, follow">
+<link rel="canonical" href="https://chama360.vercel.app/">
 <meta property="og:title" content="Por onde seu atendimento vaza cliente?">
 <meta property="og:description" content="Responda 7 perguntas e veja o diagnóstico do seu atendimento no WhatsApp.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://chama360.vercel.app/">
+<meta property="og:site_name" content="CHAMA 360">
+<meta property="og:locale" content="pt_BR">
+<!-- A prévia fica em PNG de propósito, não no WebP que as páginas usam: o WhatsApp é o canal
+     por onde este link mais circula, e o suporte a WebP em prévia de link ainda é irregular
+     entre os raspadores. O peso extra não custa nada ao visitante, só ao raspador. -->
+<meta property="og:image" content="https://chama360.vercel.app/assets/logo-chama360-wide.png">
+<meta property="og:image:width" content="938">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="CHAMA 360">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Por onde seu atendimento vaza cliente?">
+<meta name="twitter:description" content="Responda 7 perguntas e veja o diagnóstico do seu atendimento no WhatsApp.">
+<meta name="twitter:image" content="https://chama360.vercel.app/assets/logo-chama360-wide.png">
 <link rel="icon" type="image/png" href="assets/icone-chama360.png">
+
+<!-- Dados reais da empresa que assina os contratos, não template. O CNPJ é o mesmo que aparece
+     no rodapé e o mesmo com que a BM foi verificada na Meta: divergir aqui contradiz as duas. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://chama360.vercel.app/#organizacao",
+      "name": "CHAMA 360",
+      "legalName": "ORL360VISAO LTDA",
+      "taxID": "60.747.377/0001-30",
+      "url": "https://chama360.vercel.app/",
+      "logo": "https://chama360.vercel.app/assets/logo-chama360-wide.png",
+      "description": "Central de atendimento e CRM por conversas sobre a API Oficial do WhatsApp, com automações e agentes de IA.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "São Paulo",
+        "addressRegion": "SP",
+        "addressCountry": "BR"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "sales",
+        "telephone": "+55-11-98167-0838",
+        "availableLanguage": "Portuguese"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://chama360.vercel.app/#site",
+      "url": "https://chama360.vercel.app/",
+      "name": "CHAMA 360",
+      "inLanguage": "pt-BR",
+      "publisher": { "@id": "https://chama360.vercel.app/#organizacao" }
+    },
+    {
+      "@type": "WebPage",
+      "url": "https://chama360.vercel.app/",
+      "name": "CHAMA 360 - Descubra por onde seu atendimento vaza cliente",
+      "description": "Sete perguntas para descobrir por onde seu negócio perde cliente no WhatsApp. Diagnóstico na hora, sem cadastro longo.",
+      "inLanguage": "pt-BR",
+      "isPartOf": { "@id": "https://chama360.vercel.app/#site" },
+      "about": { "@id": "https://chama360.vercel.app/#organizacao" }
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="quiz.css">
 
 <script src="medicao.js"></script>
@@ -25,7 +89,6 @@
     --flame:#E8590C; --flame-deep:#C43C08; --flame-bright:#F5A623; --ember:#8C1F0B;
     --gold:#F2C230;
     --ok:#1E7A46;
-    --serif:'Instrument Serif',Georgia,'Times New Roman',serif;
     --sans:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;
     --radius:14px;
     --sombra:0 1px 2px rgba(14,11,8,.05), 0 12px 32px -12px rgba(14,11,8,.14);
@@ -39,7 +102,7 @@
   }
   img{display:block;max-width:100%;}
   a{color:inherit;}
-  h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.015em;margin:0;line-height:1.08;}
+  h1,h2,h3{font-family:var(--sans);font-weight:600;letter-spacing:-.015em;margin:0;line-height:1.08;}
   .wrap{width:100%;max-width:1080px;margin:0 auto;padding:0 20px;}
   .estreito{max-width:720px;}
 
@@ -47,7 +110,7 @@
   .topo{border-bottom:1px solid var(--line-soft);background:var(--paper);}
   .topo .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:14px;padding-bottom:14px;}
   .marca{display:flex;align-items:center;gap:10px;text-decoration:none;}
-  .marca img{height:38px;width:auto;border-radius:8px;background:#000;padding:4px 9px;}
+  .marca img{height:52px;width:auto;border-radius:8px;}  /* sem chip preto: a imagem já tem o fundo preto dentro dela, e o padding só encolhia a logo em 8px de altura útil */
   /* Não é um link discreto de rodapé: é a única porta para quem quer conhecer o produto
      antes de responder qualquer coisa. Precisa parecer clicável à primeira vista. */
   .topo a.link{
@@ -99,7 +162,7 @@
 <header class="topo">
   <div class="wrap">
     <a class="marca" href="/" aria-label="CHAMA 360, página inicial">
-      <img src="assets/logo-chama360-wide.png" alt="CHAMA 360" width="140" height="38">
+      <img src="assets/logo-chama360-wide.webp" alt="CHAMA 360" width="95" height="52">
     </a>
     <a class="link" href="/sobre">Conhecer a plataforma</a>
   </div>

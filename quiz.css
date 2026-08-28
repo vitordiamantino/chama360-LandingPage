@@ -5,7 +5,7 @@
  * entre eles é o teste. Manter o estilo num arquivo só evita que as duas versões divirjam
  * visualmente e contaminem essa comparação.
  *
- * Depende dos tokens (--paper, --flame, --ink, --serif, --sans) que as duas páginas já definem
+ * Depende dos tokens (--paper, --flame, --ink, --sans) que as duas páginas já definem
  * no :root. Este arquivo não redefine nenhum deles.
  */
 
@@ -81,7 +81,7 @@
     display:flex;align-items:center;gap:10px;flex-wrap:wrap;
     background:var(--paper-2);border-radius:11px;padding:13px 16px;margin:20px 0 0;font-size:14px;color:var(--ink-soft);
   }
-  .codigo b{font-family:var(--serif);font-size:22px;color:var(--flame-deep);letter-spacing:.02em;}
+  .codigo b{font-family:var(--sans);font-weight:700;font-size:21px;color:var(--flame-deep);letter-spacing:.02em;}
 
   /* vsl */
   .vsl{margin:26px 0 0;}

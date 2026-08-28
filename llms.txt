@@ -1,0 +1,42 @@
+# CHAMA 360
+
+> Central de atendimento e CRM por conversas para quem vende pelo WhatsApp. Roda sobre a API
+> Oficial do WhatsApp, com automações, agentes de IA e painel de acompanhamento. Produto da
+> ORL360VISAO LTDA (CNPJ 60.747.377/0001-30), São Paulo/SP.
+
+O problema que a plataforma resolve: negócio que atende por WhatsApp perde cliente em quatro
+pontos — demora na primeira resposta, conversa sem dono definido, follow-up que ninguém faz, e
+a impossibilidade de medir qualquer um dos três. A CHAMA 360 centraliza o atendimento da equipe
+em um número só, distribui as conversas, automatiza o primeiro contato e a retomada, e mostra o
+que está acontecendo em um painel.
+
+Por que API Oficial e não um número comum: número não oficial usado para atendimento em volume
+é suspenso pelo WhatsApp. A API Oficial é a via que suporta equipe, automação e disparo sem
+esse risco.
+
+## Páginas
+
+- [Diagnóstico do atendimento](https://chama360.vercel.app/): sete perguntas sobre como o
+  atendimento funciona hoje, com o resultado na hora, apontando por onde o negócio perde
+  cliente. Sem cadastro longo e sem custo.
+- [A plataforma](https://chama360.vercel.app/sobre): o que a CHAMA 360 faz, benefícios,
+  planos, objeções comuns, garantia e perguntas frequentes.
+- [Política de Privacidade](https://chama360.vercel.app/privacidade)
+- [Termos de Uso](https://chama360.vercel.app/termos)
+
+## Para quem é
+
+Profissionais autônomos e pequenas operações que atendem e vendem por WhatsApp. Os nichos
+atendidos hoje: personal trainer, nutricionista, dentista, esteticista, advogado, psicólogo,
+corretor de imóveis e fisioterapeuta. Personal trainer é o perfil com maior base de clientes
+ativos na plataforma.
+
+## Planos
+
+Os planos e valores públicos estão na página da plataforma. O plano Chama parte de R$ 747/mês e
+cobre CRM, IA e dashboard. O plano Fogo escala até 10 usuários e 20 chatbots. Contratação e
+demonstração acontecem por conversa no WhatsApp, não por checkout no site.
+
+## Contato
+
+WhatsApp: https://wa.me/5511981670838

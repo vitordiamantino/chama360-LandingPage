@@ -9,9 +9,11 @@
 //   4. A normalização do WhatsApp, que decide se o wa.me abre ou não.
 
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { PERGUNTAS, PRIMEIRA_PERGUNTA, PROFISSOES, VAZAMENTOS, aplicarVocabulario } from './quiz-dados.js';
 import { montarLinha } from './api/quiz.js';
 import { extrairParametros, decidirAtribuicao, registrarVisita, lerAtribuicao } from './atribuicao.js';
+import { _interno } from './quiz.js';
 
 const TOTAL = 7;
 let ok = 0;
@@ -258,6 +260,110 @@ teste('lead sem atribuição nenhuma não quebra a linha', () => {
   const l = montarLinha(CORPO, 'x');
   assert.equal(l.length, 26, 'a linha tem sempre o mesmo tamanho, com ou sem atribuição');
   assert.deepEqual(l.slice(22), ['', '', '', ''], 'colunas vazias, nunca undefined');
+});
+
+// ---------------------------------------------------------------------------------------
+// Medição por nicho. `profissao` é a dimensão que decide qual nicho sobe de camada, e ela é
+// injetada dentro de medir(), não em cada chamada. Um evento novo que nasça sem ela não
+// quebra nada visível: só produz relatório incompleto, que é pior, porque parece completo.
+// ---------------------------------------------------------------------------------------
+
+function espionarMedicao(fn) {
+  const eventos = [];
+  const janelaAntiga = globalThis.window;
+  globalThis.window = { gtag: (_tipo, nome, dados) => eventos.push({ nome, dados }) };
+  try { fn(); } finally { globalThis.window = janelaAntiga; }
+  return eventos;
+}
+
+teste('todo evento medido carrega a profissão junto', () => {
+  _interno.estado.respostas.profissao = 'dentista';
+  const eventos = espionarMedicao(() => {
+    _interno.medir('quiz_pergunta_vista', { numero: 3 });
+    _interno.medir('clique_whatsapp');
+    _interno.medir('quiz_lead_gravado', { codigo: 'D-1234' });
+  });
+  assert.equal(eventos.length, 3, 'os três eventos deveriam ter chegado ao gtag');
+  eventos.forEach((e) => {
+    assert.equal(e.dados.profissao, 'dentista', `${e.nome} foi medido sem profissão`);
+  });
+  assert.equal(eventos[0].dados.numero, 3, 'a injeção não pode engolir o dado próprio do evento');
+  delete _interno.estado.respostas.profissao;
+});
+
+teste('antes da pergunta 1 a profissão vai preenchida, não vazia', () => {
+  delete _interno.estado.respostas.profissao;
+  const [e] = espionarMedicao(() => _interno.medir('quiz_pergunta_vista', { numero: 1 }));
+  // Campo ausente some do relatório do GA4 e o nicho "ainda não respondeu" vira buraco em vez
+  // de linha. Um valor explícito mantém a soma por nicho fechando com o total de eventos.
+  assert.equal(e.dados.profissao, 'nao_informada');
+});
+
+teste('medição não derruba o funil quando não existe tag nenhuma', () => {
+  const janelaAntiga = globalThis.window;
+  globalThis.window = {};
+  try {
+    assert.doesNotThrow(() => _interno.medir('quiz_resposta', { numero: 1 }));
+  } finally { globalThis.window = janelaAntiga; }
+});
+
+// ---------------------------------------------------------------------------------------
+// Arquivos de SEO. Sitemap apontando para rota que não existe é erro de cobertura no Search
+// Console, e é exatamente o risco quando /diagnostico entrar no W7: alguém acrescenta a URL
+// aqui antes de o arquivo existir e ninguém percebe até o Google reclamar.
+// ---------------------------------------------------------------------------------------
+
+const ROTA_PARA_ARQUIVO = { '/': 'index.html' };
+
+teste('toda URL do sitemap corresponde a uma página que existe', () => {
+  const xml = fs.readFileSync('sitemap.xml', 'utf8');
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  assert.ok(urls.length > 0, 'sitemap sem nenhuma URL');
+  urls.forEach((url) => {
+    const rota = new URL(url).pathname;
+    const arquivo = ROTA_PARA_ARQUIVO[rota] || `${rota.replace(/^\//, '')}.html`;
+    assert.ok(fs.existsSync(arquivo), `sitemap promete ${rota}, mas ${arquivo} não existe no repo`);
+  });
+});
+
+teste('robots.txt aponta para o sitemap e não bloqueia o site', () => {
+  const robots = fs.readFileSync('robots.txt', 'utf8');
+  assert.match(robots, /^Sitemap: https:\/\/\S+\/sitemap\.xml$/m, 'robots.txt sem linha Sitemap');
+  assert.doesNotMatch(robots, /^Disallow: \/$/m, 'Disallow: / tira o site inteiro do Google');
+});
+
+teste('o JSON-LD de toda página parseia', () => {
+  ['index.html', 'sobre.html'].forEach((f) => {
+    const blocos = [...fs.readFileSync(f, 'utf8')
+      .matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    assert.ok(blocos.length > 0, `${f} sem JSON-LD`);
+    blocos.forEach((b) => {
+      // Um JSON-LD quebrado não aparece no console do navegador nem derruba a página: o
+      // Google simplesmente ignora, e a página perde o rich result em silêncio.
+      assert.doesNotThrow(() => JSON.parse(b[1]), `JSON-LD de ${f} não parseia`);
+    });
+  });
+});
+
+teste('o FAQ estruturado promete as mesmas perguntas que a página mostra', () => {
+  const html = fs.readFileSync('sobre.html', 'utf8');
+  const ld = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+  const faq = ld['@graph'].find((n) => n['@type'] === 'FAQPage');
+  const visiveis = [...html.matchAll(/<button class="faq-q">([^<]+)</g)].map((m) => m[1].trim());
+  assert.equal(faq.mainEntity.length, visiveis.length,
+    `${faq.mainEntity.length} perguntas no JSON-LD contra ${visiveis.length} na página`);
+  faq.mainEntity.forEach((q) => {
+    assert.ok(visiveis.includes(q.name), `"${q.name}" está no JSON-LD mas não aparece na página`);
+  });
+});
+
+teste('nenhuma página aponta para imagem que não existe', () => {
+  ['index.html', 'sobre.html', 'privacidade.html', 'termos.html'].forEach((f) => {
+    const refs = [...fs.readFileSync(f, 'utf8').matchAll(/(?:src|href)="(assets\/[^"]+)"/g)];
+    refs.forEach((m) => {
+      assert.ok(fs.existsSync(m[1]), `${f} aponta para ${m[1]}, que não existe`);
+    });
+  });
 });
 
 console.log(`\n${ok} checagens passaram\n`);
