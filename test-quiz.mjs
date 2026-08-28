@@ -10,7 +10,10 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { PERGUNTAS, PRIMEIRA_PERGUNTA, PROFISSOES, VAZAMENTOS, aplicarVocabulario } from './quiz-dados.js';
+import {
+  PERGUNTAS, PRIMEIRA_PERGUNTA, PROFISSOES, VAZAMENTOS, aplicarVocabulario,
+  QUIZ_POR_NICHO, resolverQuiz,
+} from './quiz-dados.js';
 import { montarLinha } from './api/quiz.js';
 import { extrairParametros, decidirAtribuicao, registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { _interno } from './quiz.js';
@@ -116,6 +119,129 @@ teste('todo vazamento do diagnóstico tem ao menos uma resposta que o aponta', (
   });
 });
 
+// ---------------------------------------------------------------------------------------
+// W2 — quiz por nicho. O que quebraria em silêncio aqui: uma lista que não termina (tela
+// vazia sem erro no console), um `peso` apontando dor que não existe naquele nicho (achado
+// some do diagnóstico), ou um nicho de camada 2 deixando de cair no genérico.
+// ---------------------------------------------------------------------------------------
+
+console.log('\nquiz por nicho');
+
+const NICHOS_PROPRIOS = Object.keys(QUIZ_POR_NICHO).filter((k) => k !== 'default');
+
+// Percorre a lista de um nicho como o motor faria, a partir da segunda pergunta.
+function percorrerNicho(nicho, escolher) {
+  const quiz = QUIZ_POR_NICHO[nicho];
+  const respostas = { profissao: nicho };
+  const caminho = [];
+  const numeros = [];
+  let atual = PERGUNTAS.profissao.proxima(respostas);
+  let guarda = 0;
+  while (atual) {
+    if (++guarda > 20) throw new Error(`a lista de ${nicho} não terminou: ciclo em ${atual}`);
+    const p = quiz.perguntas[atual];
+    assert.ok(p, `${nicho}: pergunta inexistente no caminho: ${atual}`);
+    const opcao = p.opcoes[escolher(p) % p.opcoes.length];
+    respostas[p.id] = opcao.valor;
+    caminho.push(p.id);
+    numeros.push(p.numero);
+    atual = p.proxima(respostas);
+  }
+  return { respostas, caminho, numeros };
+}
+
+teste('a camada 1 tem os três nichos decididos em 28/08', () => {
+  assert.deepEqual(NICHOS_PROPRIOS.sort(), ['corretor', 'dentista', 'personal'],
+    'a camada 1 mudou sem o gate: era Personal, Corretor e Dentista');
+});
+
+teste('todo nicho termina, com o número de perguntas que promete', () => {
+  NICHOS_PROPRIOS.forEach((nicho) => {
+    for (let i = 0; i < 5; i++) {
+      const r = percorrerNicho(nicho, () => i);
+      // +1 porque a pergunta de profissão vive fora da lista do nicho.
+      assert.equal(r.caminho.length + 1, QUIZ_POR_NICHO[nicho].total,
+        `${nicho}: percorreu ${r.caminho.length + 1} perguntas, prometeu ${QUIZ_POR_NICHO[nicho].total}`);
+      assert.equal(new Set(r.caminho).size, r.caminho.length, `${nicho}: pergunta repetida no caminho`);
+      assert.deepEqual(r.numeros, [2, 3, 4, 5, 6, 7], `${nicho}: numeração fora de ordem: ${r.numeros.join(',')}`);
+    }
+  });
+});
+
+teste('nenhum nicho ficou mais longo que o genérico sem o gate', () => {
+  // A decisão de 28/08 foi manter 7. Subir para 8-10 é permitido pelo plano, mas é decisão do
+  // Vitor: se alguém alongar sem passar por ele, o abandono sobe junto e ninguém liga uma coisa
+  // à outra.
+  NICHOS_PROPRIOS.forEach((nicho) => {
+    assert.equal(QUIZ_POR_NICHO[nicho].total, 7,
+      `${nicho} tem ${QUIZ_POR_NICHO[nicho].total} perguntas: o combinado é 7`);
+  });
+});
+
+teste('toda resposta aponta dor que existe no próprio nicho', () => {
+  NICHOS_PROPRIOS.forEach((nicho) => {
+    const quiz = QUIZ_POR_NICHO[nicho];
+    Object.values(quiz.perguntas).forEach((p) => {
+      p.opcoes.forEach((o) => (o.peso || []).forEach((w) => {
+        assert.ok(quiz.dores[w], `${nicho}: a resposta "${o.label}" aponta a dor "${w}", que não existe nesse nicho`);
+      }));
+    });
+  });
+});
+
+teste('toda dor de nicho é alcançável por alguma resposta', () => {
+  NICHOS_PROPRIOS.forEach((nicho) => {
+    const quiz = QUIZ_POR_NICHO[nicho];
+    const apontadas = new Set();
+    Object.values(quiz.perguntas).forEach((p) => {
+      p.opcoes.forEach((o) => (o.peso || []).forEach((w) => apontadas.add(w)));
+    });
+    Object.keys(quiz.dores).forEach((k) => {
+      assert.ok(apontadas.has(k), `${nicho}: a dor "${k}" existe no texto mas nenhuma resposta a marca: nunca apareceria`);
+    });
+  });
+});
+
+teste('a ordem de exibição cobre exatamente as dores do nicho, com cegueira na frente', () => {
+  Object.entries(QUIZ_POR_NICHO).forEach(([nicho, quiz]) => {
+    assert.deepEqual([...quiz.ordemDores].sort(), Object.keys(quiz.dores).sort(),
+      `${nicho}: ordemDores e dores divergem, então alguma dor calculada nunca seria exibida`);
+    assert.equal(quiz.ordemDores[0], 'cegueira',
+      `${nicho}: a cegueira precisa vir primeiro — não adianta falar de vazamento com quem não mede nenhum`);
+  });
+});
+
+teste('nicho de camada 2 e profissão desconhecida caem no genérico', () => {
+  ['esteticista', 'nutri', 'advogado', 'psicologo', 'fisio', 'cabeleireiro', 'medico', 'outra']
+    .forEach((id) => {
+      assert.equal(resolverQuiz(id), QUIZ_POR_NICHO.default, `${id} deveria cair no quiz genérico`);
+    });
+  assert.equal(resolverQuiz('profissao_que_nao_existe'), QUIZ_POR_NICHO.default);
+  assert.equal(resolverQuiz(undefined), QUIZ_POR_NICHO.default, 'antes da pergunta 1 o quiz é o genérico');
+});
+
+teste('as duas profissões novas do W8 estão na lista', () => {
+  const ids = PROFISSOES.map((p) => p.id);
+  assert.ok(ids.includes('cabeleireiro'), 'cabeleireiro entrou na camada 2 pela decisão de 28/08');
+  assert.ok(ids.includes('medico'), 'médico entrou na camada 2 pela decisão de 28/08');
+  assert.equal(ids[ids.length - 1], 'outra', '"outra profissão" precisa continuar sendo a última opção da lista');
+});
+
+teste('nenhum placeholder sobra nos textos de nicho', () => {
+  NICHOS_PROPRIOS.forEach((nicho) => {
+    const quiz = QUIZ_POR_NICHO[nicho];
+    const textos = [];
+    Object.values(quiz.perguntas).forEach((p) => {
+      textos.push(p.texto, p.ajuda || '');
+      p.opcoes.forEach((o) => textos.push(o.label));
+    });
+    Object.values(quiz.dores).forEach((d) => textos.push(d.titulo, d.texto));
+    textos.forEach((t) => {
+      assert.ok(!aplicarVocabulario(t, nicho).includes('{'), `${nicho}: placeholder não traduzido em "${t}"`);
+    });
+  });
+});
+
 console.log('\ngravação na planilha');
 
 const CORPO = {
@@ -134,9 +260,9 @@ const CORPO = {
   pagina: '/',
 };
 
-teste('monta 26 colunas, na ordem combinada', () => {
+teste('monta 28 colunas, na ordem combinada', () => {
   const l = montarLinha(CORPO, '2026-08-25T14:00:00.000Z');
-  assert.equal(l.length, 26, `esperava 26 colunas, veio ${l.length}`);
+  assert.equal(l.length, 28, `esperava 28 colunas, veio ${l.length}`);
   assert.equal(l[0], '2026-08-25T14:00:00.000Z', 'A deveria ser a data');
   assert.equal(l[1], 'Ana Paula', 'B deveria ser o nome, sem espaço nas pontas');
   assert.equal(l[2], "'5511981670838", 'C deveria ser o WhatsApp normalizado com aspa à frente');
@@ -152,6 +278,66 @@ teste('a resposta da pergunta 3 cai na mesma coluna, venha de qual ramo vier', (
   const ramoB = montarLinha({ ...CORPO, rotulos: { ...CORPO.rotulos, tempoResposta: undefined, divisao: 'Quem vê primeiro responde' } }, 'x');
   assert.equal(ramoA[6], 'Só quando eu paro, geralmente à noite');
   assert.equal(ramoB[6], 'Quem vê primeiro responde', 'o ramo B da pergunta 3 precisa cair na coluna G igual ao ramo A');
+});
+
+teste('o lead de um nicho preenche as mesmas colunas, com os ids dele', () => {
+  // O dentista responde `quemOrcamento` onde o genérico responde `tempoResposta`. Sem a ordem,
+  // montarLinha procuraria um id que não existe e gravaria a linha com buracos, sem erro nenhum.
+  const corpoNicho = {
+    ...CORPO,
+    respostas: { profissao: 'dentista', faltas: 'bastante' },
+    rotulos: {
+      profissao: 'Dentista',
+      quemResponde: 'Eu e mais uma pessoa',
+      quemOrcamento: 'A recepção responde quando dá uma brecha',
+      comoPassaValor: 'Mando o valor pelo WhatsApp mesmo',
+      orcamentoParado: 'Fica por isso mesmo',
+      faltas: 'Bastante, é o meu maior problema',
+      manutencao: 'Só se ele procurar',
+    },
+    ordem: ['profissao', 'quemResponde', 'quemOrcamento', 'comoPassaValor', 'orcamentoParado', 'faltas', 'manutencao'],
+    nicho: 'dentista',
+    variantes: {},
+  };
+  const l = montarLinha(corpoNicho, 'x');
+  assert.equal(l.length, 28);
+  assert.equal(l[4], 'Dentista', 'E continua sendo a profissão');
+  assert.equal(l[5], 'Eu e mais uma pessoa', 'F continua sendo a P2');
+  assert.equal(l[6], 'A recepção responde quando dá uma brecha', 'G precisa trazer a P3 do dentista');
+  assert.equal(l[8], 'Mando o valor pelo WhatsApp mesmo', 'I precisa trazer a P4 do dentista');
+  assert.equal(l[10], 'Fica por isso mesmo', 'K precisa trazer a P5 do dentista');
+  assert.equal(l[11], 'Bastante, é o meu maior problema', 'L precisa trazer a P6 do dentista');
+  assert.equal(l[13], 'Só se ele procurar', 'N precisa trazer a P7 do dentista');
+  assert.equal(l[27], 'dentista', 'AB precisa dizer qual quiz o lead respondeu');
+});
+
+teste('o respostas_json da coluna AA volta inteiro', () => {
+  const l = montarLinha({ ...CORPO, ordem: ['profissao', 'quemResponde'], nicho: 'default' }, 'x');
+  const json = JSON.parse(l[26]);
+  assert.deepEqual(json.respostas, CORPO.respostas, 'as respostas precisam sobreviver ao round-trip');
+  assert.equal(json.rotulos.profissao, 'Dentista');
+  assert.deepEqual(json.ordem, ['profissao', 'quemResponde'], 'a ordem é o que permite ler a linha depois');
+});
+
+teste('payload sem ordem ainda grava, pelo mapeamento antigo', () => {
+  // Aba aberta antes do deploy continua enviando o formato velho. Se isso gravasse linha vazia,
+  // o lead sumiria em silêncio justamente na janela do deploy.
+  const { ordem, ...semOrdem } = { ...CORPO, ordem: undefined };
+  const l = montarLinha(semOrdem, 'x');
+  assert.equal(l[5], 'Só eu', 'F precisa continuar vindo pelo id conhecido');
+  assert.equal(l[6], 'Só quando eu paro, geralmente à noite', 'G precisa continuar vindo pelo id conhecido');
+  assert.equal(l[13], 'WhatsApp Business', 'N precisa continuar vindo pelo id conhecido');
+});
+
+teste('o cabeçalho do verificador tem o mesmo tamanho da linha que a rota grava', () => {
+  // Os dois arquivos descrevem a mesma planilha e não se enxergam. Divergir aqui só apareceria
+  // no dia em que alguém rodasse o verificador contra a planilha real.
+  const fonte = fs.readFileSync('verificar-planilha.mjs', 'utf8');
+  const bloco = fonte.match(/const CABECALHO = \[([\s\S]*?)\];/)[1]
+    .replace(/\/\/.*$/gm, '');  // comentário com vírgula dentro engoliria a coluna seguinte
+  const colunas = bloco.match(/'[^']*'/g) || [];
+  assert.equal(colunas.length, montarLinha(CORPO, 'x').length,
+    `o verificador espera ${colunas.length} colunas e a rota grava ${montarLinha(CORPO, 'x').length}`);
 });
 
 teste('acento e pontuação sobrevivem à limpeza de texto', () => {
@@ -249,7 +435,7 @@ teste('storage bloqueado não derruba o lead', () => {
 
 teste('a atribuição chega nas colunas W a Z', () => {
   const l = montarLinha({ ...CORPO, atribuicao: { origem: 'ig', criativo: 'dentista-dor-v2', campanha: 'chama-dentista', paginaEntrada: '/' } }, 'x');
-  assert.equal(l.length, 26, `esperava 26 colunas depois da atribuição, veio ${l.length}`);
+  assert.equal(l.length, 28, `esperava 28 colunas depois da atribuição, veio ${l.length}`);
   assert.equal(l[22], 'ig', 'W deveria ser a origem atribuída');
   assert.equal(l[23], 'dentista-dor-v2', 'X deveria ser o criativo atribuído');
   assert.equal(l[24], 'chama-dentista', 'Y deveria ser a campanha atribuída');
@@ -258,8 +444,8 @@ teste('a atribuição chega nas colunas W a Z', () => {
 
 teste('lead sem atribuição nenhuma não quebra a linha', () => {
   const l = montarLinha(CORPO, 'x');
-  assert.equal(l.length, 26, 'a linha tem sempre o mesmo tamanho, com ou sem atribuição');
-  assert.deepEqual(l.slice(22), ['', '', '', ''], 'colunas vazias, nunca undefined');
+  assert.equal(l.length, 28, 'a linha tem sempre o mesmo tamanho, com ou sem atribuição');
+  assert.deepEqual(l.slice(22, 26), ['', '', '', ''], 'W a Z vazias, nunca undefined');
 });
 
 // ---------------------------------------------------------------------------------------

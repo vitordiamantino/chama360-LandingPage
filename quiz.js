@@ -4,14 +4,27 @@
 // para /api/quiz. Não conhece nenhum texto de pergunta: se precisar mexer em copy, é lá.
 
 import {
-  PERGUNTAS, PRIMEIRA_PERGUNTA, VAZAMENTOS, FAIXAS,
-  acharProfissao, aplicarVocabulario,
+  PRIMEIRA_PERGUNTA, FAIXAS,
+  acharProfissao, aplicarVocabulario, resolverQuiz, QUIZ_POR_NICHO,
 } from './quiz-dados.js';
 import { registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { montarVsl } from './vsl.js';
 
-const TOTAL_PERGUNTAS = 7;
 const WHATSAPP = '5511981670838';
+
+// Qual quiz está em jogo. Enquanto a profissão não foi respondida, é o genérico — que é onde a
+// pergunta 1 mora. Depois dela, passa a ser o do nicho, ou o genérico de novo se aquele nicho
+// for de camada 2. O motor abaixo não precisa saber em qual dos dois está.
+function quizAtual() {
+  return resolverQuiz(estado.respostas.profissao);
+}
+
+// A pergunta 1 mora no genérico, as outras na lista do nicho. Quem volta da pergunta 2 para a 1,
+// ou percorre as respostas para montar o diagnóstico, precisa achar as duas — então a busca cai
+// no genérico quando o id não está no nicho. Sem isso, voltar para a primeira pergunta trava.
+function acharPergunta(id) {
+  return quizAtual().perguntas[id] || QUIZ_POR_NICHO.default.perguntas[id];
+}
 
 const estado = {
   atual: PRIMEIRA_PERGUNTA,
@@ -56,11 +69,11 @@ function gerarCodigo(profissaoId) {
   return `${letra}-${n}`;
 }
 
-function perguntaAtual() { return PERGUNTAS[estado.atual]; }
+function perguntaAtual() { return quizAtual().perguntas[estado.atual]; }
 
 function progresso() {
   const p = perguntaAtual();
-  return p ? p.numero : TOTAL_PERGUNTAS;
+  return p ? p.numero : quizAtual().total;
 }
 
 function renderPergunta() {
@@ -71,8 +84,8 @@ function renderPergunta() {
   const texto = aplicarVocabulario(p.texto, prof);
   const ajuda = p.ajuda ? aplicarVocabulario(p.ajuda, prof) : '';
 
-  el('quiz-passo').textContent = `Pergunta ${p.numero} de ${TOTAL_PERGUNTAS}`;
-  el('quiz-barra-fill').style.width = `${(p.numero / TOTAL_PERGUNTAS) * 100}%`;
+  el('quiz-passo').textContent = `Pergunta ${p.numero} de ${quizAtual().total}`;
+  el('quiz-barra-fill').style.width = `${(p.numero / quizAtual().total) * 100}%`;
   el('quiz-pergunta').textContent = texto;
 
   const elAjuda = el('quiz-ajuda');
@@ -132,7 +145,7 @@ function avancar() {
 function voltar() {
   const anterior = estado.caminho.pop();
   if (!anterior) return;
-  const p = PERGUNTAS[anterior];
+  const p = acharPergunta(anterior);
   // Apaga o que foi respondido daqui pra frente: mudar uma resposta pode trocar o ramo inteiro,
   // e resposta de um ramo abandonado não pode sobrar na planilha.
   delete estado.respostas[anterior];
@@ -143,7 +156,7 @@ function voltar() {
 }
 
 function renderCaptura() {
-  el('captura-passo').textContent = `${TOTAL_PERGUNTAS} de ${TOTAL_PERGUNTAS} respondidas`;
+  el('captura-passo').textContent = `${quizAtual().total} de ${quizAtual().total} respondidas`;
   mostrar('captura');
   medir('quiz_captura_vista');
   setTimeout(() => { const n = el('campo-nome'); if (n) n.focus(); }, 60);
@@ -162,7 +175,7 @@ function normalizarWhatsapp(bruto) {
 function calcularDiagnostico() {
   const marcados = new Set();
   Object.keys(estado.respostas).forEach((idPergunta) => {
-    const p = PERGUNTAS[idPergunta];
+    const p = acharPergunta(idPergunta);
     if (!p) return;
     const escolhida = p.opcoes.find((o) => o.valor === estado.respostas[idPergunta]);
     (escolhida && escolhida.peso ? escolhida.peso : []).forEach((w) => marcados.add(w));
@@ -170,7 +183,7 @@ function calcularDiagnostico() {
 
   // A cegueira vem primeiro quando existe: não adianta falar de vazamento com quem não
   // consegue medir nenhum.
-  const ordem = ['cegueira', 'demora', 'sem_dono', 'sem_retomada'];
+  const ordem = quizAtual().ordemDores;
   return ordem.filter((k) => marcados.has(k));
 }
 
@@ -210,7 +223,7 @@ function renderDiagnostico() {
     lista.appendChild(li);
   }
   achados.forEach((k, i) => {
-    const v = VAZAMENTOS[k];
+    const v = quizAtual().dores[k];
     const li = document.createElement('li');
     li.className = 'vazamento';
     li.innerHTML = `<span class="vaz-n">${i + 1}</span><div><h3></h3><p></p></div>`;
@@ -273,6 +286,11 @@ async function enviar(e) {
     respostas: estado.respostas,
     rotulos: estado.rotulos,
     variantes: estado.variantes,
+    // A ordem real em que as perguntas foram feitas. Com quiz por nicho, os ids deixam de ser os
+    // mesmos para todo mundo, então a planilha não pode mais montar as colunas procurando id
+    // conhecido: ela monta pela posição, e é esta lista que diz qual é a posição de quem.
+    ordem: estado.caminho.slice(),
+    nicho: quizAtual() === QUIZ_POR_NICHO.default ? 'default' : estado.respostas.profissao,
     vazamentos: calcularDiagnostico(),
     utm: Object.fromEntries(new URLSearchParams(location.search).entries()),
     pagina: location.pathname,

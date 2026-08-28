@@ -57,7 +57,7 @@ await page.waitForTimeout(250);
 
 conferir((await textoDe(page, '#quiz-passo')).includes('1 de 7'), 'abre na pergunta 1 de 7');
 conferir((await textoDe(page, '#quiz-pergunta')).length > 10, 'a pergunta 1 tem texto');
-conferir(await page.locator('#quiz-opcoes .opcao').count() === 9, 'a pergunta 1 mostra as 9 profissões');
+conferir(await page.locator('#quiz-opcoes .opcao').count() === 11, 'a pergunta 1 mostra as 11 profissões');
 conferir(await page.locator('#quiz-voltar').isHidden(), 'o botão voltar não aparece na primeira pergunta');
 
 // Quem cai aqui e quer conhecer o produto antes de responder precisa achar a porta sem procurar.
@@ -91,15 +91,19 @@ conferir((await textoDe(page, '#quiz-passo')).includes('2 de 7'), 'voltar leva d
 conferir(await page.locator('#quiz-avancar').isDisabled(), 'ao voltar, continuar volta a ficar desabilitado');
 await responder(page, 'Só eu');
 
-await responder(page, 'geralmente à noite');
+// Daqui em diante o dentista percorre o quiz PRÓPRIO dele, do W2: nenhuma dessas perguntas
+// existe no quiz genérico. Se o motor tivesse caído no default, nenhum destes textos apareceria.
+await responder(page, 'brecha');
 conferir((await textoDe(page, '#quiz-passo')).includes('4 de 7'), 'chega na pergunta 4');
-await responder(page, 'Toda semana');
+await responder(page, 'Mando o valor pelo WhatsApp mesmo');
 conferir((await textoDe(page, '#quiz-passo')).includes('5 de 7'), 'chega na pergunta 5');
-await responder(page, 'De 6 a 15');
+await responder(page, 'Fica por isso mesmo');
 conferir((await textoDe(page, '#quiz-passo')).includes('6 de 7'), 'chega na pergunta 6');
-await responder(page, 'Nada, fica por isso mesmo');
+const p6Dentista = await textoDe(page, '#quiz-pergunta');
+conferir(p6Dentista.includes('faltam sem avisar'), `a pergunta 6 é a de faltas, do dentista: "${p6Dentista}"`);
+await responder(page, 'é o meu maior problema');
 conferir((await textoDe(page, '#quiz-passo')).includes('7 de 7'), 'chega na pergunta 7');
-await responder(page, 'WhatsApp Business');
+await responder(page, 'Só se ele procurar');
 
 // ---------- captura ----------
 console.log('\ntela de captura');
@@ -132,8 +136,14 @@ const abertura = await textoDe(page, '#diag-abertura');
 const vazamentos = await page.locator('#diag-lista .vazamento').count();
 conferir(titulo.includes('vazamento'), `o título nomeia os vazamentos: "${titulo}"`);
 conferir(vazamentos >= 2, `mostra ${vazamentos} vazamentos, esperado ao menos 2 nesse caminho`);
-conferir(abertura.includes('6 e 15'), `a abertura usa a faixa que o lead respondeu: "${abertura}"`);
 conferir(!abertura.includes('{') && !titulo.includes('{'), 'nenhum placeholder cru no diagnóstico');
+
+// A prova de que o diagnóstico é o do nicho, e não o genérico: estes títulos só existem nas
+// dores do dentista. Se o motor tivesse caído no default, viriam "demora" e "sem_dono".
+const doresNaTela = await textoDe(page, '#diag-lista');
+conferir(doresNaTela.includes('Falta sem aviso'), 'o diagnóstico traz a cadeira vazia, que é dor do dentista');
+conferir(doresNaTela.includes('Orçamento passado'), 'o diagnóstico traz o orçamento parado, que é dor do dentista');
+conferir(!doresNaTela.includes('Nenhuma conversa tem dono'), 'nenhuma dor genérica pode vazar para um nicho com quiz próprio');
 
 const codigo = await textoDe(page, '#diag-codigo');
 conferir(/^D-\d{4}$/.test(codigo), `o código começa com a letra da profissão: "${codigo}"`);
@@ -178,22 +188,25 @@ const dobraM = await m.locator('#quiz-opcoes').boundingBox();
 conferir(dobraM && dobraM.y < 844, `no celular a primeira pergunta também aparece sem rolar (y=${Math.round(dobraM?.y ?? -1)})`);
 await m.screenshot({ path: `${SAIDA}/05-mobile-abertura.png`, fullPage: true });
 
+// Personal Trainer é o nicho com prova de carteira, e desde o W2 tem quiz próprio. Este caminho
+// escolhe de propósito as respostas que acusam cegueira, para conferir que ela aparece primeiro
+// no diagnóstico mesmo tendo sido a última pergunta respondida.
 await responder(m, 'Personal Trainer');
 await responder(m, 'Uma equipe');
 const p3m = await textoDe(m, '#quiz-pergunta');
-conferir(p3m.includes('dividem'), `quem tem equipe recebe a pergunta de divisão, não a de tempo: "${p3m}"`);
-await responder(m, 'Não tem regra nenhuma');
+conferir(p3m.includes('fechar um plano'), `a pergunta 3 é a de plano, do personal: "${p3m}"`);
+await responder(m, 'geralmente à noite');
 const p4m = await textoDe(m, '#quiz-pergunta');
-conferir(p4m.includes('duas pessoas'), `o ramo de atropelo aparece: "${p4m}"`);
+conferir(p4m.includes('aluno pagante'), `a pergunta 4 separa aluno de interessado: "${p4m}"`);
 conferir(p4m.includes('aluno'), `o vocabulário do personal trainer aparece: "${p4m}"`);
-await m.screenshot({ path: `${SAIDA}/06-mobile-ramo-equipe.png`, fullPage: true });
+await m.screenshot({ path: `${SAIDA}/06-mobile-nicho-personal.png`, fullPage: true });
 
-await responder(m, 'Toda semana');
-await responder(m, 'Não faço ideia');
+await responder(m, 'Tá tudo junto no WhatsApp');
+await responder(m, 'Fica por isso mesmo');
 const p6m = await textoDe(m, '#quiz-pergunta');
-conferir(p6m.includes('Instagram'), `quem não sabe o número cai na pergunta de cegueira: "${p6m}"`);
-await responder(m, 'Não, não tenho como saber');
-await responder(m, 'Só o WhatsApp normal');
+conferir(p6m.includes('parou de treinar'), `a pergunta 6 é a de evasão, do personal: "${p6m}"`);
+await responder(m, 'Quando o pagamento não entra');
+await responder(m, 'Não tenho ideia');
 
 await m.locator('#campo-nome').fill('Bruno');
 await m.locator('#campo-whatsapp').fill('11981670838');
@@ -230,7 +243,7 @@ console.log('\nquiz embutido no institucional');
 
   conferir(await p.locator('#tela-quiz').isVisible(), 'o quiz aparece dentro do institucional');
   conferir((await textoDe(p, '#quiz-passo')).toLowerCase().includes('1 de 7'), 'começa na pergunta 1');
-  conferir(await p.locator('#quiz-opcoes .opcao').count() === 9, 'mostra as 9 profissões, igual ao funil');
+  conferir(await p.locator('#quiz-opcoes .opcao').count() === 11, 'mostra as 11 profissões, igual ao funil');
 
   // O bloco entra depois da seção que nomeia a dor, e antes da que apresenta a solução.
   const posQuiz = await p.locator('#diagnostico').boundingBox();
@@ -245,9 +258,13 @@ console.log('\nquiz embutido no institucional');
   const botaoQuiz = await p.locator('#quiz-avancar').evaluate((n) => getComputedStyle(n).borderRadius);
   conferir(parseFloat(botaoQuiz) < 20, `os botões do quiz usam o raio próprio (${botaoQuiz}), sem herdar a pílula`);
 
-  // Percorre o quiz inteiro aqui também, por um terceiro caminho.
+  // Terceiro caminho, e desde o W2 ele prova outra coisa: advogado é camada 2, então precisa
+  // cair no quiz GENÉRICO, com a ramificação de sempre. Se um dia alguém der lista própria a ele
+  // sem querer, é aqui que aparece.
   await responder(p, 'Advogado');
   await responder(p, 'Eu e mais uma pessoa');
+  const p3adv = await textoDe(p, '#quiz-pergunta');
+  conferir(p3adv.includes('dividem'), `nicho de camada 2 cai no quiz genérico: "${p3adv}"`);
   await responder(p, 'Tem uma divisão combinada');
   const p4 = await textoDe(p, '#quiz-pergunta');
   conferir(p4.includes('Depois que o cliente responde'), `o ramo organizado aparece: "${p4}"`);

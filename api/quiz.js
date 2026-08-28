@@ -13,7 +13,7 @@ import { google } from 'googleapis';
 // o Google escolhe o nome da aba sozinho. Um range sem prefixo grava na primeira aba, o que
 // é estável. A contrapartida é que criar uma aba ANTES desta redireciona a gravação, e é por
 // isso que verificar-planilha.mjs confere o cabeçalho da primeira aba.
-const FAIXA = 'A:Z';
+const FAIXA = 'A:AB';  // AA e AB entraram no W2: respostas_json e a lista de perguntas usada
 const UMA_HORA = 60 * 60 * 1000;
 
 // Limitador em memória da instância, no espírito do api/_lib/limiteEnvio.js da MBN. Não é
@@ -54,27 +54,43 @@ async function abrirPlanilha() {
 
 // A ordem aqui é a ordem das colunas da planilha, e mexer nela quebra tudo que veio antes.
 // Coluna nova entra no FIM, nunca no meio.
+// Com quiz por nicho, os ids das perguntas deixaram de ser os mesmos para todo mundo: a P3 do
+// dentista não se chama como a P3 do genérico. Então as colunas de resposta são montadas pela
+// POSIÇÃO em que a pergunta foi feita, e não procurando id conhecido.
+//
+// Para o quiz genérico o resultado é idêntico ao de antes, porque a ordem dele já era essa. Se
+// `ordem` não vier — payload de uma aba aberta antes do deploy —, cai no mapeamento por id
+// antigo, senão o lead entraria com as colunas vazias.
+function respostaNaPosicao(corpo, i, idsAntigos) {
+  const rot = corpo.rotulos || {};
+  const ordem = Array.isArray(corpo.ordem) ? corpo.ordem : null;
+  if (ordem) return rot[ordem[i]];
+  for (const id of idsAntigos) if (rot[id]) return rot[id];
+  return '';
+}
+
 export function montarLinha(corpo, agoraISO) {
   const r = corpo.respostas || {};
   const rot = corpo.rotulos || {};
   const v = corpo.variantes || {};
   const utm = corpo.utm || {};
   const atr = corpo.atribuicao || {};
+  const pos = (i, ...ids) => limparTexto(respostaNaPosicao(corpo, i, ids), 90);
   return [
     agoraISO,                                  // A  Data e hora
     limparTexto(corpo.nome, 80),               // B  Nome
     `'${normalizarWhatsapp(corpo.whatsapp)}`,  // C  WhatsApp (aspa simples para o Sheets não comer o zero)
     limparTexto(corpo.codigo, 12),             // D  Código do diagnóstico
     limparTexto(rot.profissao, 60),            // E  P1 Profissão
-    limparTexto(rot.quemResponde, 90),         // F  P2 Quem responde
-    limparTexto(rot.tempoResposta || rot.divisao, 90),                 // G  P3 resposta
-    v[3] || '',                                                        // H  P3 variante
-    limparTexto(rot.esquecimento || rot.atropelo || rot.depoisQue, 90),// I  P4 resposta
-    v[4] || '',                                                        // J  P4 variante
-    limparTexto(rot.quantos, 40),              // K  P5 Quantos escapam
-    limparTexto(rot.cegueira || rot.retomada, 90),                     // L  P6 resposta
-    v[6] || '',                                                        // M  P6 variante
-    limparTexto(rot.ferramenta, 60),           // N  P7 Ferramenta atual
+    pos(1, 'quemResponde'),                    // F  P2 resposta
+    pos(2, 'tempoResposta', 'divisao'),        // G  P3 resposta
+    v[3] || '',                                // H  P3 variante
+    pos(3, 'esquecimento', 'atropelo', 'depoisQue'), // I  P4 resposta
+    v[4] || '',                                // J  P4 variante
+    pos(4, 'quantos'),                         // K  P5 resposta
+    pos(5, 'cegueira', 'retomada'),            // L  P6 resposta
+    v[6] || '',                                // M  P6 variante
+    pos(6, 'ferramenta'),                      // N  P7 resposta
     (corpo.vazamentos || []).join(', '),       // O  Vazamentos apontados
     limparTexto(utm.utm_source, 60),           // P
     limparTexto(utm.utm_medium, 60),           // Q
@@ -91,6 +107,15 @@ export function montarLinha(corpo, agoraISO) {
     limparTexto(atr.criativo, 200),            // X  Criativo atribuído (utm_content, ou ad_id)
     limparTexto(atr.campanha, 200),            // Y  Campanha atribuída
     limparTexto(atr.paginaEntrada, 90),        // Z  Página em que a pessoa entrou no site
+    // AA e AB entram no FIM, nunca no meio: o site grava por letra fixa e inserir coluna no meio
+    // desalinha a planilha inteira em silêncio.
+    //
+    // AA é a verdade completa do que foi respondido, independente de nicho. As colunas E a N
+    // continuam legíveis, mas o significado de cada uma passa a depender do nicho — e é o JSON
+    // que permite ler qualquer lead sem saber de antemão qual quiz ele respondeu. É também a
+    // fonte de onde o W4 monta a aba por nicho.
+    JSON.stringify({ respostas: r, rotulos: rot, ordem: corpo.ordem || [] }),  // AA respostas_json
+    limparTexto(corpo.nicho, 30),              // AB  Qual lista de perguntas o lead respondeu
   ];
 }
 

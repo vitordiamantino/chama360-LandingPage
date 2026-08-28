@@ -17,7 +17,17 @@ const CABECALHO = [
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
   'Página', 'Profissão (código)',
   'Origem atribuída', 'Criativo atribuído', 'Campanha atribuída', 'Página de entrada',
+  // AA e AB entraram no W2, quiz por nicho. Coluna nova sempre no FIM.
+  'Respostas (JSON)', 'Quiz respondido',
 ];
+
+// String.fromCharCode(65 + i) só vale até Z: no índice 26 devolveria "[". Com 28 colunas a
+// mensagem de erro apontaria uma coluna que não existe, e mandaria conferir o lugar errado.
+function letraDaColuna(i) {
+  let n = i, letra = '';
+  do { letra = String.fromCharCode(65 + (n % 26)) + letra; n = Math.floor(n / 26) - 1; } while (n >= 0);
+  return letra;
+}
 
 const problemas = [];
 function conferir(condicao, mensagem) {
@@ -53,7 +63,7 @@ const linha = (data.values && data.values[0]) || [];
 conferir(linha.length === CABECALHO.length, `a primeira aba tem ${linha.length} colunas de cabeçalho, esperado ${CABECALHO.length}`);
 
 const trocadas = CABECALHO
-  .map((esperado, i) => ({ letra: String.fromCharCode(65 + i), esperado, veio: (linha[i] || '').trim() }))
+  .map((esperado, i) => ({ letra: letraDaColuna(i), esperado, veio: (linha[i] || '').trim() }))
   .filter((c) => c.veio !== c.esperado);
 conferir(trocadas.length === 0, 'o cabeçalho está na ordem que a rota grava');
 trocadas.forEach((c) => console.log(`        coluna ${c.letra}: esperado "${c.esperado}", veio "${c.veio}"`));
