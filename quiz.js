@@ -240,8 +240,9 @@ function renderDiagnostico() {
   document.querySelectorAll('[data-whatsapp]').forEach((a) => { a.href = href; });
 
   // O player entra só agora, quando o diagnóstico aparece: não faz sentido carregar vídeo
-  // para quem abandona no meio do quiz, e isso é a maioria.
-  montarVsl(el('player-vsl'), medir);
+  // para quem abandona no meio do quiz, e isso é a maioria. `prof` decide qual vídeo, título
+  // e legenda: o do nicho quando ele tem gravação própria, o default enquanto não tem.
+  montarVsl(el('player-vsl'), medir, prof);
 
   mostrar('diagnostico');
   medir('quiz_diagnostico_visto', {

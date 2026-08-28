@@ -7,6 +7,8 @@
 // Exige GOOGLE_SERVICE_ACCOUNT_JSON e SHEET_ID no ambiente.
 
 import { google } from 'googleapis';
+import { QUIZ_POR_NICHO } from './quiz-dados.js';
+import { abaDoNicho, cabecalhoNicho } from './api/quiz.js';
 
 // A ordem aqui tem que bater com a de montarLinha, em api/quiz.js. Se as duas divergirem,
 // a planilha enche de dado trocado de coluna sem nenhum erro aparecer.
@@ -55,22 +57,52 @@ const abas = meta.data.sheets.map((s) => s.properties.title);
 console.log(`  abas: ${abas.join(' | ')}`);
 conferir(abas.length >= 1, 'a planilha tem ao menos uma aba');
 
-// A rota grava na primeira aba, sem citar nome. Se alguém criar uma aba antes desta, o lead
-// passa a cair no lugar errado, e é exatamente isso que esta checagem pega.
-const { data } = await sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'A1:Z1' });
-const linha = (data.values && data.values[0]) || [];
+// ---------- aba mestre ----------
+// A rota grava com prefixo de aba explícito: prefere 'Leads', cai na primeira se ela ainda
+// não existir. Confere o cabeçalho no mesmo lugar.
+const abaMestre = abas.includes('Leads') ? 'Leads' : abas[0];
+conferir(abaMestre === 'Leads', "a aba mestre se chama 'Leads' (senão a rota está caindo na primeira aba por índice)");
 
-conferir(linha.length === CABECALHO.length, `a primeira aba tem ${linha.length} colunas de cabeçalho, esperado ${CABECALHO.length}`);
+const ultimaLetra = letraDaColuna(CABECALHO.length - 1);
+const { data: dMestre } = await sheets.spreadsheets.values.get({
+  spreadsheetId: id, range: `${abaMestre}!A1:${ultimaLetra}1`,
+});
+const linha = (dMestre.values && dMestre.values[0]) || [];
+
+conferir(linha.length === CABECALHO.length,
+  `a aba mestre tem ${linha.length} colunas de cabeçalho, esperado ${CABECALHO.length}`);
 
 const trocadas = CABECALHO
   .map((esperado, i) => ({ letra: letraDaColuna(i), esperado, veio: (linha[i] || '').trim() }))
   .filter((c) => c.veio !== c.esperado);
-conferir(trocadas.length === 0, 'o cabeçalho está na ordem que a rota grava');
+conferir(trocadas.length === 0, 'o cabeçalho da mestre está na ordem que a rota grava');
 trocadas.forEach((c) => console.log(`        coluna ${c.letra}: esperado "${c.esperado}", veio "${c.veio}"`));
 
-const tudo = await sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'A:A' });
+const tudo = await sheets.spreadsheets.values.get({ spreadsheetId: id, range: `${abaMestre}!A:A` });
 const leads = Math.max(0, ((tudo.data.values || []).length - 1));
 console.log(`  leads gravados até agora: ${leads}`);
+
+// ---------- abas por nicho (W4) ----------
+// Só existem para a camada 1, e são criadas sozinhas no primeiro lead daquele nicho. Aqui a
+// checagem é: se a aba existe, o cabeçalho dela bate com o que a rota escreveria hoje.
+const nichos = Object.keys(QUIZ_POR_NICHO).filter((n) => n !== 'default');
+for (const nicho of nichos) {
+  const titulo = abaDoNicho(nicho);
+  if (!abas.includes(titulo)) {
+    console.log(`  aba do nicho "${titulo}" ainda não existe (nasce no primeiro lead do nicho)`);
+    continue;
+  }
+  const esperado = cabecalhoNicho(nicho);
+  const fim = letraDaColuna(esperado.length - 1);
+  const { data } = await sheets.spreadsheets.values.get({ spreadsheetId: id, range: `${titulo}!A1:${fim}1` });
+  const cab = (data.values && data.values[0]) || [];
+  const divergentes = esperado
+    .map((exp, i) => ({ letra: letraDaColuna(i), exp, veio: (cab[i] || '').trim() }))
+    .filter((c) => c.veio !== c.exp);
+  conferir(cab.length === esperado.length && divergentes.length === 0,
+    `a aba "${titulo}" tem o cabeçalho que a rota escreve (${esperado.length} colunas)`);
+  divergentes.forEach((c) => console.log(`        coluna ${c.letra}: esperado "${c.exp}", veio "${c.veio}"`));
+}
 
 console.log(`\n${problemas.length === 0 ? 'PLANILHA OK' : 'PLANILHA COM PROBLEMA:'}`);
 problemas.forEach((p) => console.log('  - ' + p));

@@ -6,14 +6,20 @@
 // Mesmo padrão de credencial já usado na Meu Banco Não: o JSON inteiro da conta de serviço
 // vive na variável de ambiente GOOGLE_SERVICE_ACCOUNT_JSON, do lado do servidor. Nenhuma chave
 // aparece no HTML.
+//
+// W4 — duas escritas por lead:
+//   1. Aba mestre 'Leads': todo lead, 28 colunas fixas (montarLinha). Fonte de verdade.
+//   2. Aba do nicho ('Personal Trainer', 'Corretor de Imóveis', 'Dentista'): só os leads
+//      daquele nicho, uma coluna por pergunta do formulário dele, legível sem abrir o JSON.
+//      Criada sozinha na primeira vez (garantirAba). Nicho de camada 2 e quiz genérico não
+//      geram aba.
+// A escrita na aba do nicho nunca derruba a requisição: se ela falhar, o lead já está na
+// mestre, que é o que importa.
 
 import { google } from 'googleapis';
+import { QUIZ_POR_NICHO, PERGUNTAS, acharProfissao } from '../quiz-dados.js';
 
-// Sem nome de aba de propósito: a planilha foi criada por conversão de CSV, e nesse caminho
-// o Google escolhe o nome da aba sozinho. Um range sem prefixo grava na primeira aba, o que
-// é estável. A contrapartida é que criar uma aba ANTES desta redireciona a gravação, e é por
-// isso que verificar-planilha.mjs confere o cabeçalho da primeira aba.
-const FAIXA = 'A:AB';  // AA e AB entraram no W2: respostas_json e a lista de perguntas usada
+const COLUNAS_MESTRE = 'A:AB';   // AA e AB entraram no W2: respostas_json e a lista de perguntas
 const UMA_HORA = 60 * 60 * 1000;
 
 // Limitador em memória da instância, no espírito do api/_lib/limiteEnvio.js da MBN. Não é
@@ -43,7 +49,7 @@ function normalizarWhatsapp(bruto) {
 }
 
 async function abrirPlanilha() {
-  const raw = (process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '').replace(/^﻿/, '').trim();
+  const raw = (process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '').replace(/^\uFEFF/, '').trim();
   if (!raw) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON ausente');
   const auth = new google.auth.GoogleAuth({
     credentials: JSON.parse(raw),
@@ -52,7 +58,7 @@ async function abrirPlanilha() {
   return google.sheets({ version: 'v4', auth });
 }
 
-// A ordem aqui é a ordem das colunas da planilha, e mexer nela quebra tudo que veio antes.
+// A ordem aqui é a ordem das colunas da aba mestre, e mexer nela quebra tudo que veio antes.
 // Coluna nova entra no FIM, nunca no meio.
 // Com quiz por nicho, os ids das perguntas deixaram de ser os mesmos para todo mundo: a P3 do
 // dentista não se chama como a P3 do genérico. Então as colunas de resposta são montadas pela
@@ -109,14 +115,93 @@ export function montarLinha(corpo, agoraISO) {
     limparTexto(atr.paginaEntrada, 90),        // Z  Página em que a pessoa entrou no site
     // AA e AB entram no FIM, nunca no meio: o site grava por letra fixa e inserir coluna no meio
     // desalinha a planilha inteira em silêncio.
-    //
-    // AA é a verdade completa do que foi respondido, independente de nicho. As colunas E a N
-    // continuam legíveis, mas o significado de cada uma passa a depender do nicho — e é o JSON
-    // que permite ler qualquer lead sem saber de antemão qual quiz ele respondeu. É também a
-    // fonte de onde o W4 monta a aba por nicho.
     JSON.stringify({ respostas: r, rotulos: rot, ordem: corpo.ordem || [] }),  // AA respostas_json
     limparTexto(corpo.nicho, 30),              // AB  Qual lista de perguntas o lead respondeu
   ];
+}
+
+// ------------------------------------------------------------------------------------------
+// W4 — a aba por nicho
+// ------------------------------------------------------------------------------------------
+
+// Colunas de identificação e de rastreio, iguais em toda aba de nicho. Entre as duas ficam as
+// perguntas daquele nicho, uma coluna cada. A última fica reservada para o W3 (diagnóstico
+// escrito por IA), preenchida vazia por enquanto.
+const IDENTIDADE_NICHO = ['Data e hora', 'Nome', 'WhatsApp', 'Código'];
+const RASTREIO_NICHO = ['Página', 'Origem atribuída', 'Criativo atribuído', 'Campanha atribuída', 'Diagnóstico completo'];
+
+// O quiz de um nicho tem tamanho fixo DENTRO do nicho, mesmo variando ENTRE nichos. É isso que
+// deixa a aba do nicho ter colunas fixas. Nicho de camada 2 (cai no `default`) e quiz genérico
+// não têm aba: seus leads vivem só na mestre, com o respostas_json.
+function quizDoNicho(nichoId) {
+  const quiz = QUIZ_POR_NICHO[nichoId];
+  return quiz && quiz !== QUIZ_POR_NICHO.default ? quiz : null;
+}
+
+// Nome da aba daquele nicho, ou null se ele não tem aba própria. É o label da profissão, para
+// a aba ser legível ("Dentista", "Corretor de Imóveis") em vez de um id.
+export function abaDoNicho(nichoId) {
+  return quizDoNicho(nichoId) ? acharProfissao(nichoId).label : null;
+}
+
+// Cabeçalho da aba do nicho: identidade + uma coluna por pergunta (a de profissão primeiro,
+// depois as do nicho na ordem em que são feitas) + rastreio. null para quem não tem aba.
+export function cabecalhoNicho(nichoId) {
+  const quiz = quizDoNicho(nichoId);
+  if (!quiz) return null;
+  const doNicho = Object.values(quiz.perguntas).sort((a, b) => a.numero - b.numero);
+  const perguntas = [PERGUNTAS.profissao, ...doNicho].map((p) => p.texto);
+  return [...IDENTIDADE_NICHO, ...perguntas, ...RASTREIO_NICHO];
+}
+
+// Linha da aba do nicho, alinhada com cabecalhoNicho(corpo.nicho). As respostas entram na
+// ordem real em que as perguntas foram feitas (corpo.ordem), que para um quiz linear de nicho
+// é a mesma ordem do cabeçalho.
+export function montarLinhaNicho(corpo, agoraISO) {
+  const rot = corpo.rotulos || {};
+  const atr = corpo.atribuicao || {};
+  const ordem = Array.isArray(corpo.ordem) ? corpo.ordem : [];
+  const respostas = ordem.map((id) => limparTexto(rot[id], 90));
+  return [
+    agoraISO,
+    limparTexto(corpo.nome, 80),
+    `'${normalizarWhatsapp(corpo.whatsapp)}`,
+    limparTexto(corpo.codigo, 12),
+    ...respostas,
+    limparTexto(corpo.pagina, 90),
+    limparTexto(atr.origem, 60),
+    limparTexto(atr.criativo, 200),
+    limparTexto(atr.campanha, 200),
+    '',   // Diagnóstico completo, preenchido pelo W3
+  ];
+}
+
+// Descobre em qual aba a mestre vive. Prefere a chamada 'Leads'; se ela ainda não existe (a
+// planilha nasceu de um CSV, com a aba sem nome), cai na primeira por índice — que é o
+// comportamento de hoje. Escrever com prefixo de aba explícito também mata a fragilidade
+// antiga: criar aba nova não redireciona mais a gravação.
+function nomeDaAbaMestre(meta) {
+  const abas = (meta.data.sheets || [])
+    .map((s) => s.properties)
+    .sort((a, b) => (a.index || 0) - (b.index || 0));
+  const leads = abas.find((p) => p.title === 'Leads');
+  return (leads || abas[0] || {}).title || null;
+}
+
+// Cria a aba do nicho com o cabeçalho, se ela ainda não existir. addSheet entra no fim, então
+// a aba mestre continua sendo a primeira.
+async function garantirAba(sheets, spreadsheetId, titulo, cabecalho, abasExistentes) {
+  if (abasExistentes.includes(titulo)) return;
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: { requests: [{ addSheet: { properties: { title: titulo } } }] },
+  });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${titulo}!A1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [cabecalho] },
+  });
 }
 
 export default async function handler(req, res) {
@@ -137,13 +222,40 @@ export default async function handler(req, res) {
 
   try {
     const sheets = await abrirPlanilha();
+    const spreadsheetId = process.env.SHEET_ID;
+    const agoraISO = new Date().toISOString();
+
+    const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets.properties(title,index)' });
+    const abas = (meta.data.sheets || []).map((s) => s.properties.title);
+    const abaMestre = nomeDaAbaMestre(meta);
+
+    // 1. A mestre sempre recebe o lead.
     await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.SHEET_ID,
-      range: FAIXA,
+      spreadsheetId,
+      range: `${abaMestre}!${COLUNAS_MESTRE}`,
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
-      requestBody: { values: [montarLinha(corpo, new Date().toISOString())] },
+      requestBody: { values: [montarLinha(corpo, agoraISO)] },
     });
+
+    // 2. Se for nicho de camada 1, grava também na aba dele. Nunca derruba a requisição: o
+    //    lead já está na mestre.
+    const aba = abaDoNicho(corpo.nicho);
+    if (aba && Array.isArray(corpo.ordem)) {
+      try {
+        await garantirAba(sheets, spreadsheetId, aba, cabecalhoNicho(corpo.nicho), abas);
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: `${aba}!A:A`,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          requestBody: { values: [montarLinhaNicho(corpo, agoraISO)] },
+        });
+      } catch (e2) {
+        console.error('[quiz] aba do nicho falhou (lead já está na mestre):', e2 && e2.message);
+      }
+    }
+
     return res.status(200).json({ ok: true, codigo: limparTexto(corpo.codigo, 12) });
   } catch (e) {
     // O lead já respondeu tudo. Falhar aqui não pode apagar o diagnóstico da tela dele, então

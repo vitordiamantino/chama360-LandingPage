@@ -14,9 +14,10 @@ import {
   PERGUNTAS, PRIMEIRA_PERGUNTA, PROFISSOES, VAZAMENTOS, aplicarVocabulario,
   QUIZ_POR_NICHO, resolverQuiz,
 } from './quiz-dados.js';
-import { montarLinha } from './api/quiz.js';
+import { montarLinha, abaDoNicho, cabecalhoNicho, montarLinhaNicho } from './api/quiz.js';
 import { extrairParametros, decidirAtribuicao, registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { _interno } from './quiz.js';
+import { VSL_POR_PROFISSAO, resolverVsl } from './vsl.js';
 
 const TOTAL = 7;
 let ok = 0;
@@ -242,6 +243,57 @@ teste('nenhum placeholder sobra nos textos de nicho', () => {
   });
 });
 
+// ---------------------------------------------------------------------------------------
+// W1 — vídeo por nicho no diagnóstico. O que quebraria em silêncio: uma profissão que
+// resolve para um objeto sem `titulo` (o bloco do player aparece sem chamada e ninguém dá
+// play), ou um nicho de camada 1 sem entrada própria (o Orlando grava e não tem onde colar
+// o id sem mexer no motor).
+// ---------------------------------------------------------------------------------------
+
+console.log('\nvídeo por nicho');
+
+teste('o default tem título e legenda, sempre', () => {
+  assert.ok(VSL_POR_PROFISSAO.default, 'sem entrada default, nicho sem vídeo fica sem player');
+  assert.ok(VSL_POR_PROFISSAO.default.titulo, 'default sem título: o bloco do vídeo aparece mudo');
+  assert.ok(VSL_POR_PROFISSAO.default.legenda, 'default sem legenda');
+});
+
+teste('toda profissão da lista resolve para um vídeo com título e legenda, sem lançar', () => {
+  PROFISSOES.forEach((p) => {
+    let vsl;
+    assert.doesNotThrow(() => { vsl = resolverVsl(p.id); }, `resolverVsl('${p.id}') lançou`);
+    assert.ok(vsl && vsl.titulo, `${p.id} resolveu para algo sem título`);
+    assert.ok(vsl && vsl.legenda, `${p.id} resolveu para algo sem legenda`);
+  });
+});
+
+teste('profissão desconhecida e ausente caem no default', () => {
+  assert.equal(resolverVsl('profissao_que_nao_existe'), VSL_POR_PROFISSAO.default);
+  assert.equal(resolverVsl(undefined), VSL_POR_PROFISSAO.default, 'antes da pergunta 1 o vídeo é o default');
+});
+
+teste('entrada sem vídeo cai no default; com vturbId ou arquivo, vence', () => {
+  // Enquanto o Orlando não grava, personal/corretor/dentista existem com título próprio mas sem
+  // vturbId, e o lead vê o vídeo default. Assim que o id entra, a entrada do nicho passa a valer.
+  Object.entries(VSL_POR_PROFISSAO).forEach(([id, e]) => {
+    if (id === 'default') return;
+    if (e.vturbId || e.arquivo) {
+      assert.equal(resolverVsl(id), e, `${id} tem vídeo próprio e deveria vencer o default`);
+    } else {
+      assert.equal(resolverVsl(id), VSL_POR_PROFISSAO.default, `${id} sem vídeo deveria cair no default`);
+    }
+  });
+});
+
+teste('os três nichos da camada 1 têm entrada própria, prontos para receber o vturbId', () => {
+  ['personal', 'corretor', 'dentista'].forEach((id) => {
+    const e = VSL_POR_PROFISSAO[id];
+    assert.ok(e, `${id} precisa de entrada própria para o Orlando só colar o id, sem abrir o motor`);
+    assert.ok(e.titulo && e.legenda, `${id} sem título/legenda sob medida: a entrada própria não serve pra nada`);
+    assert.ok('vturbId' in e, `${id} sem campo vturbId: não dá pra publicar sem editar a forma do objeto`);
+  });
+});
+
 console.log('\ngravação na planilha');
 
 const CORPO = {
@@ -348,6 +400,86 @@ teste('acento e pontuação sobrevivem à limpeza de texto', () => {
 teste('WhatsApp fora do formato não vira linha silenciosa', () => {
   const l = montarLinha({ ...CORPO, whatsapp: '123' }, 'x');
   assert.equal(l[2], "'null", 'número inválido precisa ficar visível na planilha, e a rota já barra antes disso');
+});
+
+// ---------------------------------------------------------------------------------------
+// W4 — aba por nicho. A aba mestre 'Leads' recebe todo lead (montarLinha, 28 colunas). Cada
+// nicho de camada 1 ganha uma aba própria, com uma coluna por pergunta daquele nicho, legível
+// sem abrir o JSON. O que quebra em silêncio: cabeçalho e linha da aba do nicho com tamanhos
+// diferentes (dado entra torto e ninguém vê até abrir a aba), ou um nicho de camada 2 ganhando
+// aba à toa.
+// ---------------------------------------------------------------------------------------
+
+console.log('\naba por nicho (W4)');
+
+const CORPO_DENTISTA_NICHO = {
+  nome: 'Marina Alves',
+  whatsapp: '(11) 98167-0838',
+  codigo: 'D-7781',
+  respostas: { profissao: 'dentista', faltas: 'bastante' },
+  rotulos: {
+    profissao: 'Dentista',
+    quemResponde: 'Eu e mais uma pessoa',
+    quemOrcamento: 'A recepção responde quando dá uma brecha',
+    comoPassaValor: 'Mando o valor pelo WhatsApp mesmo',
+    orcamentoParado: 'Fica por isso mesmo',
+    faltas: 'Bastante, é o meu maior problema',
+    manutencao: 'Só se ele procurar',
+  },
+  ordem: ['profissao', 'quemResponde', 'quemOrcamento', 'comoPassaValor', 'orcamentoParado', 'faltas', 'manutencao'],
+  nicho: 'dentista',
+  pagina: '/',
+  atribuicao: { origem: 'ig', criativo: 'dentista-dor-v2', campanha: 'chama-dentista', paginaEntrada: '/' },
+};
+
+teste('a aba do nicho existe só para a camada 1', () => {
+  assert.equal(abaDoNicho('personal'), 'Personal Trainer');
+  assert.equal(abaDoNicho('corretor'), 'Corretor de Imóveis');
+  assert.equal(abaDoNicho('dentista'), 'Dentista');
+  assert.equal(abaDoNicho('advogado'), null, 'camada 2 não ganha aba própria');
+  assert.equal(abaDoNicho('default'), null);
+  assert.equal(abaDoNicho(undefined), null, 'lead do quiz genérico não tem aba de nicho');
+});
+
+teste('o cabeçalho da aba do nicho tem uma coluna por pergunta, na ordem, mais a reserva do W3', () => {
+  NICHOS_PROPRIOS.forEach((nicho) => {
+    const cab = cabecalhoNicho(nicho);
+    assert.ok(Array.isArray(cab), `${nicho} sem cabeçalho de aba`);
+    assert.deepEqual(cab.slice(0, 4), ['Data e hora', 'Nome', 'WhatsApp', 'Código'],
+      `${nicho}: as 4 primeiras colunas são de identificação`);
+    const perguntas = cab.slice(4, 4 + QUIZ_POR_NICHO[nicho].total);
+    assert.equal(perguntas.length, QUIZ_POR_NICHO[nicho].total, `${nicho}: faltou coluna de pergunta`);
+    assert.ok(perguntas.every((t) => typeof t === 'string' && t.length > 5), `${nicho}: coluna de pergunta sem texto`);
+    assert.equal(cab[cab.length - 1], 'Diagnóstico completo', `${nicho}: a última coluna fica reservada pro W3`);
+  });
+});
+
+teste('cabeçalho e linha da aba do nicho têm o mesmo tamanho', () => {
+  // Montados em lugares diferentes de api/quiz.js e não se enxergam. Divergir aqui grava dado
+  // torto na aba do nicho sem erro nenhum.
+  const linha = montarLinhaNicho(CORPO_DENTISTA_NICHO, '2026-08-28T12:00:00.000Z');
+  assert.equal(linha.length, cabecalhoNicho('dentista').length,
+    `linha com ${linha.length} colunas, cabeçalho com ${cabecalhoNicho('dentista').length}`);
+});
+
+teste('a linha da aba do nicho traz identidade, respostas na ordem e a coluna do W3 vazia', () => {
+  const l = montarLinhaNicho(CORPO_DENTISTA_NICHO, '2026-08-28T12:00:00.000Z');
+  assert.equal(l[0], '2026-08-28T12:00:00.000Z');
+  assert.equal(l[1], 'Marina Alves');
+  assert.equal(l[2], "'5511981670838");
+  assert.equal(l[3], 'D-7781');
+  assert.equal(l[4], 'Dentista', 'a 5ª coluna é a resposta da P1 (profissão)');
+  assert.equal(l[5], 'Eu e mais uma pessoa', 'a 6ª é a P2 do dentista');
+  assert.equal(l[6], 'A recepção responde quando dá uma brecha', 'a 7ª é a P3 do dentista');
+  assert.equal(l[9], 'Bastante, é o meu maior problema', 'a P6 do dentista (faltas) cai na coluna certa');
+  assert.equal(l[10], 'Só se ele procurar', 'a P7 do dentista (manutenção) é a última de pergunta');
+  assert.equal(l[l.length - 1], '', 'a coluna de diagnóstico do W3 vai vazia por enquanto');
+});
+
+teste('nicho de camada 2 e quiz genérico não geram cabeçalho de aba', () => {
+  assert.equal(cabecalhoNicho('advogado'), null);
+  assert.equal(cabecalhoNicho('default'), null);
+  assert.equal(cabecalhoNicho(undefined), null);
 });
 
 console.log('\natribuição de criativo');
