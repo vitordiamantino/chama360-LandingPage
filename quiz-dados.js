@@ -10,21 +10,27 @@
 // As oito profissões dos criativos de 24/08, mais uma saída para quem não se encaixa.
 // `cliente` e `plural` reescrevem o texto das perguntas. `ocupado` é o momento em que a mão
 // dele está presa exatamente quando o cliente chega, que é a dor comum às oito.
+// `label` é o nome canônico: vai para a coluna Profissão da planilha e dá nome à aba do nicho.
+// NUNCA mudar o label de um nicho de camada 1 que já tem aba criada — `garantirAba` criaria
+// uma aba nova e o histórico ficaria partido em duas.
+// `curto` é só o texto do botão no quiz. Existe porque a lista tem 18 opções e precisa caber em
+// duas colunas no celular; sem ele os nomes longos quebram em três linhas e a lista fica pior
+// do que era com uma coluna só.
 export const PROFISSOES = [
   { id: 'personal',    label: 'Personal Trainer',      cliente: 'aluno',    plural: 'alunos',    ocupado: 'dando aula',              espera: 'quem quer fechar um plano' },
   { id: 'nutri',       label: 'Nutricionista',         cliente: 'paciente', plural: 'pacientes', ocupado: 'em consulta',             espera: 'quem quer marcar a primeira consulta' },
   { id: 'dentista',    label: 'Dentista',              cliente: 'paciente', plural: 'pacientes', ocupado: 'com paciente na cadeira', espera: 'quem pediu orçamento' },
   { id: 'esteticista', label: 'Esteticista',           cliente: 'cliente',  plural: 'clientes',  ocupado: 'atendendo',               espera: 'quem quer agendar um procedimento' },
-  { id: 'advogado',    label: 'Advogado ou Advogada',  cliente: 'cliente',  plural: 'clientes',  ocupado: 'em audiência',            espera: 'quem tem um caso pra te contar' },
-  { id: 'psicologo',   label: 'Psicólogo ou Psicóloga',cliente: 'paciente', plural: 'pacientes', ocupado: 'em sessão',               espera: 'quem quer marcar a primeira sessão' },
+  { id: 'advogado',    label: 'Advogado ou Advogada',  curto: 'Advogado(a)', cliente: 'cliente',  plural: 'clientes',  ocupado: 'em audiência',            espera: 'quem tem um caso pra te contar' },
+  { id: 'psicologo',   label: 'Psicólogo ou Psicóloga', curto: 'Psicólogo(a)', cliente: 'paciente', plural: 'pacientes', ocupado: 'em sessão',            espera: 'quem quer marcar a primeira sessão' },
   { id: 'corretor',    label: 'Corretor de Imóveis',   cliente: 'cliente',  plural: 'clientes',  ocupado: 'mostrando um imóvel',     espera: 'quem perguntou o valor' },
   { id: 'fisio',       label: 'Fisioterapeuta',        cliente: 'paciente', plural: 'pacientes', ocupado: 'atendendo na maca',       espera: 'quem quer marcar sessão' },
   // Camada 2, entram em 28/08 pelo W8. Cabeleireiro passa nos três filtros e tem o melhor dado
   // de canal da lista (9 em 10 clientes agendam por WhatsApp); médico passa no filtro do conselho
   // e cai no de "quem atende", porque tem secretária — quem qualifica se separa sozinho na
   // pergunta 2. Os dois usam o quiz e a VSL padrão, sem uma linha de código a mais.
-  { id: 'cabeleireiro',label: 'Cabeleireiro ou Cabeleireira', cliente: 'cliente', plural: 'clientes', ocupado: 'atendendo na cadeira', espera: 'quem quer marcar um horário' },
-  { id: 'medico',      label: 'Médico ou Médica',      cliente: 'paciente', plural: 'pacientes', ocupado: 'em consulta',             espera: 'quem quer marcar consulta' },
+  { id: 'cabeleireiro',label: 'Cabeleireiro ou Cabeleireira', curto: 'Cabeleireiro(a)', cliente: 'cliente', plural: 'clientes', ocupado: 'atendendo na cadeira', espera: 'quem quer marcar um horário' },
+  { id: 'medico',      label: 'Médico ou Médica',      curto: 'Médico(a)', cliente: 'paciente', plural: 'pacientes', ocupado: 'em consulta',       espera: 'quem quer marcar consulta' },
 
   // Praças novas, 31/08. Ordem e recorte vêm da pesquisa de profissões que mais dependem de
   // WhatsApp, aplicando os mesmos 4 filtros do W8 (volume · o dono responde · o conselho deixa
@@ -33,13 +39,13 @@ export const PROFISSOES = [
   // Corretor de seguros, veterinário e oficina ganharam quiz próprio (camada 1) porque a dor
   // deles não é a mesma do genérico: renovação de apólice, retorno de vacina e box travado não
   // têm equivalente na árvore padrão. Os outros quatro usam o genérico.
-  { id: 'corretor_seguros', label: 'Corretor de Seguros',  cliente: 'cliente', plural: 'clientes', ocupado: 'resolvendo um sinistro',   espera: 'quem pediu uma cotação' },
-  { id: 'veterinario', label: 'Veterinário ou Clínica Veterinária', cliente: 'tutor', plural: 'tutores', ocupado: 'em atendimento',  espera: 'quem quer marcar consulta' },
+  { id: 'corretor_seguros', label: 'Corretor de Seguros', cliente: 'cliente', plural: 'clientes', ocupado: 'resolvendo um sinistro',   espera: 'quem pediu uma cotação' },
+  { id: 'veterinario', label: 'Veterinário ou Clínica Veterinária', curto: 'Veterinário', cliente: 'tutor', plural: 'tutores', ocupado: 'em atendimento', espera: 'quem quer marcar consulta' },
   { id: 'oficina',     label: 'Oficina Mecânica',      cliente: 'cliente',  plural: 'clientes',  ocupado: 'com o carro no elevador', espera: 'quem está esperando orçamento' },
   { id: 'barbearia',   label: 'Barbearia',             cliente: 'cliente',  plural: 'clientes',  ocupado: 'atendendo na cadeira',    espera: 'quem quer marcar um horário' },
-  { id: 'pilates',     label: 'Estúdio de Pilates ou Academia', cliente: 'aluno', plural: 'alunos', ocupado: 'dando aula',          espera: 'quem quer fazer uma aula experimental' },
-  { id: 'arquiteto',   label: 'Arquiteto ou Designer de Interiores', cliente: 'cliente', plural: 'clientes', ocupado: 'visitando uma obra', espera: 'quem pediu uma proposta' },
-  { id: 'contador',    label: 'Contador ou Escritório de Contabilidade', cliente: 'cliente', plural: 'clientes', ocupado: 'fechando um balanço', espera: 'quem mandou um documento' },
+  { id: 'pilates',     label: 'Estúdio de Pilates ou Academia', curto: 'Pilates ou Academia', cliente: 'aluno', plural: 'alunos', ocupado: 'dando aula', espera: 'quem quer fazer uma aula experimental' },
+  { id: 'arquiteto',   label: 'Arquiteto ou Designer de Interiores', curto: 'Arquiteto(a)', cliente: 'cliente', plural: 'clientes', ocupado: 'visitando uma obra', espera: 'quem pediu uma proposta' },
+  { id: 'contador',    label: 'Contador ou Escritório de Contabilidade', curto: 'Contador(a)', cliente: 'cliente', plural: 'clientes', ocupado: 'fechando um balanço', espera: 'quem mandou um documento' },
 
   { id: 'outra',       label: 'Outra profissão',       cliente: 'cliente',  plural: 'clientes',  ocupado: 'com a mão ocupada',       espera: 'quem quer comprar de você' },
 ];
@@ -55,7 +61,10 @@ export const PERGUNTAS = {
     numero: 1,
     texto: 'Pra começar: o que você faz?',
     ajuda: 'As perguntas seguintes mudam conforme a sua resposta aqui.',
-    opcoes: PROFISSOES.map((p) => ({ valor: p.id, label: p.label })),
+    // `label` é o que aparece no botão (curto, para caber em duas colunas no celular) e
+    // `rotulo` é o que vai para a planilha. Sem separar os dois, a coluna Profissão passaria a
+    // gravar "Veterinário" onde o histórico tem "Veterinário ou Clínica Veterinária".
+    opcoes: PROFISSOES.map((p) => ({ valor: p.id, label: p.curto || p.label, rotulo: p.label })),
     proxima: () => 'quemResponde',
   },
 

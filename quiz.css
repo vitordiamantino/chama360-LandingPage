@@ -30,8 +30,10 @@
      dobra — e as praças novas são justamente as do fim da lista. A classe é posta pelo
      quiz.js quando a pergunta tem mais de 8 opções, então as perguntas de 3 a 5 opções
      seguem exatamente como estavam. */
-  .opcoes.opcoes-densas{grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:8px;}
-  .opcoes.opcoes-densas .opcao{padding:11px 14px;font-size:15.5px;}
+  .opcoes.opcoes-densas{grid-template-columns:1fr 1fr;gap:8px;}
+  .opcoes.opcoes-densas .opcao{padding:11px 13px;font-size:15.5px;}
+  /* Abaixo de 360px duas colunas apertam demais mesmo com rótulo curto. */
+  @media (max-width:359px){ .opcoes.opcoes-densas{grid-template-columns:1fr;} }
   .opcao{
     width:100%;text-align:left;font:inherit;font-size:16px;color:var(--ink);
     background:var(--paper);border:1.5px solid var(--line);border-radius:11px;

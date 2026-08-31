@@ -157,10 +157,11 @@ teste('a camada 1 tem exatamente os nichos decididos', () => {
   // aba nova na planilha por nicho. Mexer aqui sem o gate é o que este teste existe para pegar.
   //
   // 28/08: Personal, Corretor e Dentista.
-  // 31/08: o Vitor pediu perguntas próprias para as praças novas da pesquisa de profissões.
-  //        Entram Corretor de Seguros, Veterinário e Oficina Mecânica — as três primeiras do
-  //        ranking, e as três cuja dor não tem equivalente no genérico (renovação de apólice,
-  //        retorno de vacina, box travado). AGUARDA CONFIRMAÇÃO DO VITOR.
+  // 31/08: entram Corretor de Seguros, Veterinário e Oficina Mecânica — as três primeiras do
+  //        ranking da pesquisa de profissões, e as três cuja dor não tem equivalente no
+  //        genérico (renovação de apólice, retorno de vacina, box travado).
+  //        ✅ CONFIRMADO PELO VITOR em 31/08: "com o quiz mudado está perfeito, é bom a gente
+  //        pegar todas as profissões ali".
   //
   // Camada 1 de QUIZ não obriga camada 1 de VSL: `resolverVsl` cai no `default` para quem não
   // tem `vturbId`, então isto não acrescenta gravação nenhuma à fila do Orlando.
@@ -245,6 +246,23 @@ teste('as profissões acrescentadas depois dos criativos continuam na lista', ()
     .forEach((id) => assert.ok(ids.includes(id), `${id} entrou pela pesquisa de 31/08`));
   assert.equal(ids[ids.length - 1], 'outra', '"outra profissão" precisa continuar sendo a última opção da lista');
   assert.equal(new Set(ids).size, ids.length, 'id de profissão repetido: o quiz resolveria o nicho errado');
+});
+
+teste('o texto curto do botão nunca vaza para a planilha nem para o nome da aba', () => {
+  // O botão da pergunta 1 mostra "Veterinário"; a planilha precisa continuar recebendo
+  // "Veterinário ou Clínica Veterinária". Se alguém apagar o `rotulo` da opção, a coluna
+  // Profissão passa a gravar o texto curto e o histórico fica partido em dois nomes, sem
+  // erro nenhum. A aba do nicho também mudaria de nome e nasceria duplicada.
+  const porId = Object.fromEntries(PROFISSOES.map((p) => [p.id, p]));
+  PERGUNTAS.profissao.opcoes.forEach((o) => {
+    const p = porId[o.valor];
+    assert.equal(o.rotulo, p.label, `${o.valor}: a opção precisa gravar o label completo`);
+    assert.equal(o.label, p.curto || p.label, `${o.valor}: o botão precisa mostrar o texto curto`);
+  });
+  // A aba do nicho lê PROFISSOES.label direto, então tem que seguir com o nome completo.
+  [['personal', 'Personal Trainer'], ['corretor', 'Corretor de Imóveis'], ['dentista', 'Dentista'],
+   ['veterinario', 'Veterinário ou Clínica Veterinária']]
+    .forEach(([id, nome]) => assert.equal(abaDoNicho(id), nome, `a aba de ${id} mudou de nome`));
 });
 
 teste('nenhum placeholder sobra nos textos de nicho', () => {

@@ -129,7 +129,10 @@ function avancar() {
   if (!p || !o) return;
 
   estado.respostas[p.id] = o.valor;
-  estado.rotulos[p.id] = aplicarVocabulario(o.label, estado.respostas.profissao);
+  // `rotulo` quando existe, `label` senão. A pergunta de profissão mostra um texto curto no
+  // botão e grava o nome completo na planilha, para não partir o histórico da coluna Profissão
+  // nem criar aba de nicho com nome novo.
+  estado.rotulos[p.id] = aplicarVocabulario(o.rotulo || o.label, estado.respostas.profissao);
   if (p.variante) estado.variantes[p.numero] = p.variante;
   estado.caminho.push(p.id);
 
