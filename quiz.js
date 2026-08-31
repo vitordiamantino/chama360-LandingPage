@@ -94,6 +94,8 @@ function renderPergunta() {
 
   const lista = el('quiz-opcoes');
   lista.innerHTML = '';
+  // Lista longa ganha duas colunas e altura menor. Ver .opcoes-densas em quiz.css.
+  lista.classList.toggle('opcoes-densas', p.opcoes.length > 8);
   p.opcoes.forEach((o) => {
     const b = document.createElement('button');
     b.type = 'button';
