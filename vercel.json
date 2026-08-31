@@ -3,7 +3,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/diagnostico", "destination": "/index.html" }
+    { "source": "/diagnostico", "destination": "/" }
   ],
   "headers": [
     {

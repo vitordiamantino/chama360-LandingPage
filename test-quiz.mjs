@@ -657,9 +657,10 @@ teste('vercel.json serve /diagnostico com o funil do quiz (W7 passo 1)', () => {
   const cfg = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
   const temArquivo = fs.existsSync('diagnostico.html');
   const regra = (cfg.rewrites || []).find((r) => r.source === '/diagnostico');
+  const destinoFunil = regra && (regra.destination === '/' || regra.destination === '/index.html');
   assert.ok(
-    temArquivo || (regra && regra.destination === '/index.html'),
-    '/diagnostico não resolve: sem diagnostico.html e sem rewrite para /index.html no vercel.json',
+    temArquivo || destinoFunil,
+    '/diagnostico não resolve: sem diagnostico.html e sem rewrite para o funil no vercel.json',
   );
 });
 
