@@ -650,6 +650,19 @@ teste('robots.txt aponta para o sitemap e não bloqueia o site', () => {
   assert.doesNotMatch(robots, /^Disallow: \/$/m, 'Disallow: / tira o site inteiro do Google');
 });
 
+teste('vercel.json serve /diagnostico com o funil do quiz (W7 passo 1)', () => {
+  // Enquanto o cutover do W7 não chega, /diagnostico não é arquivo próprio: é um rewrite para
+  // o index.html, para os anúncios já poderem apontar para a rota nova. Se alguém tirar o
+  // rewrite antes de existir um diagnostico.html, a URL dos anúncios passa a 404 calada.
+  const cfg = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
+  const temArquivo = fs.existsSync('diagnostico.html');
+  const regra = (cfg.rewrites || []).find((r) => r.source === '/diagnostico');
+  assert.ok(
+    temArquivo || (regra && regra.destination === '/index.html'),
+    '/diagnostico não resolve: sem diagnostico.html e sem rewrite para /index.html no vercel.json',
+  );
+});
+
 teste('o JSON-LD de toda página parseia', () => {
   ['index.html', 'sobre.html'].forEach((f) => {
     const blocos = [...fs.readFileSync(f, 'utf8')
