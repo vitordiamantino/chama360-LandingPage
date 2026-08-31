@@ -50,6 +50,86 @@ export const VSL_POR_PROFISSAO = {
     titulo: 'Por que o orçamento aprovado nunca vira tratamento',
     legenda: 'Orlando, sócio da ORL360, mostra onde o orçamento para entre o WhatsApp e a cadeira, e como a CHAMA faz a retomada sozinha.',
   },
+
+  // Entradas de 31/08, uma por profissão da pergunta 1. Roteiro de cada abertura em
+  // "VSL - CHAMA 360 (v2, abertura por profissão)". Todas com vturbId vazio: enquanto estiver
+  // assim, resolverVsl devolve o `default` e o lead vê a abertura genérica. Publicar uma
+  // profissão é colar o id aqui, sem tocar em mais nada.
+  corretor_seguros: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que a apólice vence sem ninguém avisar',
+    legenda: 'Orlando, sócio da ORL360, mostra por que a renovação esquecida custa mais que a venda nova, e como a CHAMA avisa antes.',
+  },
+  veterinario: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que o tutor some entre uma vacina e a próxima',
+    legenda: 'Orlando, sócio da ORL360, mostra por que o retorno anual se perde sem lembrete, e como a CHAMA chama de volta sozinha.',
+  },
+  oficina: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que o carro parado no elevador custa mais que o serviço',
+    legenda: 'Orlando, sócio da ORL360, mostra por que o orçamento sem resposta trava a oficina, e como a CHAMA destrava.',
+  },
+  nutri: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que o paciente faz a primeira consulta e some',
+    legenda: 'Orlando, sócio da ORL360, mostra por que o retorno se perde sem ninguém puxar, e como a CHAMA faz isso sozinha.',
+  },
+  esteticista: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que o horário desmarcado nunca é reocupado',
+    legenda: 'Orlando, sócio da ORL360, mostra o custo do buraco na agenda, e como a CHAMA avisa quem estava esperando.',
+  },
+  // Advogado: Provimento 205/2021 da OAB. Título e legenda falam de atendimento e prazo, nunca
+  // de vender ou fechar mais clientes. Não trocar por linguagem comercial.
+  advogado: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que quem procura advogado não espera até amanhã',
+    legenda: 'Orlando, sócio da ORL360, mostra por que o primeiro atendimento decide, e como a CHAMA organiza a entrada de casos.',
+  },
+  psicologo: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que a primeira mensagem tem prazo de validade',
+    legenda: 'Orlando, sócio da ORL360, mostra por que a demora na primeira resposta custa o paciente inteiro, e como a CHAMA encurta esse tempo.',
+  },
+  fisio: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que a série de dez sessões vira seis',
+    legenda: 'Orlando, sócio da ORL360, mostra onde a remarcação se perde, e como a CHAMA mantém a série de pé.',
+  },
+  cabeleireiro: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que o sábado cheio tem buraco no meio da tarde',
+    legenda: 'Orlando, sócio da ORL360, mostra como a agenda se perde entre um cliente e outro, e como a CHAMA segura.',
+  },
+  medico: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que você não sabe quantos pacientes desistiram de marcar',
+    legenda: 'Orlando, sócio da ORL360, mostra o que não aparece quando outra pessoa responde, e como a CHAMA devolve essa visão.',
+  },
+  barbearia: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que a cadeira fica vazia com gente querendo cortar',
+    legenda: 'Orlando, sócio da ORL360, mostra o custo do horário desmarcado, e como a CHAMA avisa a fila.',
+  },
+  pilates: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que o aluno some três semanas antes de você saber',
+    legenda: 'Orlando, sócio da ORL360, mostra por que a evasão aparece tarde demais, e como a CHAMA avisa antes.',
+  },
+  // Arquiteto: Resolução CAU/BR 52/2013 veda divulgar honorários. Nada de valor aqui.
+  arquiteto: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que a proposta some no meio das conversas',
+    legenda: 'Orlando, sócio da ORL360, mostra por que o projeto esfria sem segundo contato, e como a CHAMA guarda o estado de cada proposta.',
+  },
+  // Contador: NBC PG 01 pede publicidade moderada e veda mercantilização. O argumento é risco
+  // operacional, não vender mais.
+  contador: {
+    vturbId: '', arquivo: '', poster: '',
+    titulo: 'Por que o documento se perde e a multa é sua',
+    legenda: 'Orlando, sócio da ORL360, mostra por que o anexo some no WhatsApp, e como a CHAMA não deixa passar.',
+  },
 };
 
 // Entrada com vídeo próprio (vturbId ou arquivo) vence. Sem vídeo, ou id desconhecido, ou antes

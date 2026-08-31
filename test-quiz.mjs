@@ -322,13 +322,24 @@ teste('entrada sem vídeo cai no default; com vturbId ou arquivo, vence', () => 
   });
 });
 
-teste('os três nichos da camada 1 têm entrada própria, prontos para receber o vturbId', () => {
-  ['personal', 'corretor', 'dentista'].forEach((id) => {
+teste('toda profissão tem entrada de vídeo própria, pronta para receber o vturbId', () => {
+  // 31/08: a VSL v2 escreveu uma abertura por profissão, então toda profissão da pergunta 1
+  // (menos "outra", que é a saída genérica) precisa de entrada aqui. Publicar passa a ser colar
+  // o id, sem abrir o motor. Enquanto o vturbId está vazio, resolverVsl devolve o default.
+  PROFISSOES.filter((p) => p.id !== 'outra').forEach(({ id }) => {
     const e = VSL_POR_PROFISSAO[id];
-    assert.ok(e, `${id} precisa de entrada própria para o Orlando só colar o id, sem abrir o motor`);
-    assert.ok(e.titulo && e.legenda, `${id} sem título/legenda sob medida: a entrada própria não serve pra nada`);
-    assert.ok('vturbId' in e, `${id} sem campo vturbId: não dá pra publicar sem editar a forma do objeto`);
+    assert.ok(e, `${id} sem entrada própria: o Orlando teria que editar o motor para publicar`);
+    assert.ok(e.titulo && e.legenda, `${id} sem título/legenda sob medida: a entrada não serve pra nada`);
+    assert.ok('vturbId' in e, `${id} sem campo vturbId: não dá pra publicar sem mudar a forma do objeto`);
   });
+});
+
+teste('título e legenda de cada vídeo são únicos', () => {
+  // Dois nichos com o mesmo título significa que alguém copiou uma entrada e esqueceu de
+  // reescrever — o lead veria o vídeo do nicho dele com o texto de outro.
+  const entradas = Object.entries(VSL_POR_PROFISSAO).filter(([k]) => k !== 'default');
+  const titulos = entradas.map(([, e]) => e.titulo);
+  assert.equal(new Set(titulos).size, titulos.length, 'há título de vídeo repetido entre nichos');
 });
 
 console.log('\ngravação na planilha');
