@@ -5,6 +5,9 @@
 
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
+// Importado, e não cravado: a contagem de profissões muda toda vez que uma praça nova entra, e
+// número cravado aqui falha na próxima adição em vez de na hora em que a tela estiver errada.
+import { PROFISSOES } from './quiz-dados.js';
 
 const BASE = process.argv[2] || 'http://localhost:8899';
 const SAIDA = process.env.SAIDA || './_capturas';
@@ -57,7 +60,7 @@ await page.waitForTimeout(250);
 
 conferir((await textoDe(page, '#quiz-passo')).includes('1 de 7'), 'abre na pergunta 1 de 7');
 conferir((await textoDe(page, '#quiz-pergunta')).length > 10, 'a pergunta 1 tem texto');
-conferir(await page.locator('#quiz-opcoes .opcao').count() === 11, 'a pergunta 1 mostra as 11 profissões');
+conferir(await page.locator('#quiz-opcoes .opcao').count() === PROFISSOES.length, `a pergunta 1 mostra as ${PROFISSOES.length} profissões`);
 conferir(await page.locator('#quiz-voltar').isHidden(), 'o botão voltar não aparece na primeira pergunta');
 
 // Quem cai aqui e quer conhecer o produto antes de responder precisa achar a porta sem procurar.
@@ -243,7 +246,7 @@ console.log('\nquiz embutido no institucional');
 
   conferir(await p.locator('#tela-quiz').isVisible(), 'o quiz aparece dentro do institucional');
   conferir((await textoDe(p, '#quiz-passo')).toLowerCase().includes('1 de 7'), 'começa na pergunta 1');
-  conferir(await p.locator('#quiz-opcoes .opcao').count() === 11, 'mostra as 11 profissões, igual ao funil');
+  conferir(await p.locator('#quiz-opcoes .opcao').count() === PROFISSOES.length, `mostra as ${PROFISSOES.length} profissões, igual ao funil`);
 
   // O bloco entra depois da seção que nomeia a dor, e antes da que apresenta a solução.
   const posQuiz = await p.locator('#diagnostico').boundingBox();

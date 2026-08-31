@@ -114,6 +114,21 @@
           "@type": "Question",
           "name": "Posso adicionar usuários e recursos depois?",
           "acceptedAnswer": { "@type": "Answer", "text": "Sim. Você pode contratar usuários adicionais, mais chatbots ou migrar de plano a qualquer momento, conforme sua operação cresce." }
+        },
+        {
+          "@type": "Question",
+          "name": "Preciso trocar o meu número de WhatsApp?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Não precisa. O seu número atual é conectado ao canal oficial da Meta durante a implantação, que é feita por nós. Quem já conhece o seu contato continua te achando no mesmo número." }
+        },
+        {
+          "@type": "Question",
+          "name": "E se eu quiser sair?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Nos primeiros 30 dias corridos a partir da ativação, você cancela e devolvemos 100% do que pagou, sem burocracia. Depois desse prazo valem as condições do plano que você contratou, e elas ficam escritas no contrato antes de você assinar, não em letra miúda." }
+        },
+        {
+          "@type": "Question",
+          "name": "Quanto tempo até estar funcionando?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Depende de duas coisas: a verificação da sua empresa na Meta, que é o passo que não depende de nós, e a montagem do seu funil e dos seus robôs, que é nossa. A gente te dá o prazo real na conversa, olhando o seu caso, em vez de prometer um número igual para todo mundo." }
         }
       ]
     }
@@ -840,6 +855,48 @@
   .depo .nome { font-size: 14px; font-weight: 600; color: var(--ink); }
   .depo .cargo { font-size: 13px; color: var(--ink-mute); font-family: var(--mono); }
   .depo-aviso { margin-top: 28px; font-family: var(--mono); font-size: 12px; color: var(--ink-mute); letter-spacing: 0.04em; }
+
+  /* ===== Táticas trazidas da varredura dos 7 CRMs ===== */
+
+  /* Chips de recurso abaixo do H1 (padrão Poli Digital): índice visual do produto sem rolar */
+  .hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+  .hero-chips span {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.04em;
+    color: rgba(250,247,242,0.8); background: rgba(250,247,242,0.06);
+    border: 1px solid var(--line-dark); border-radius: 999px; padding: 6px 12px;
+  }
+
+  /* CTA de fim de bloco. Um destino só, rótulo que muda com a seção (padrão Poli). */
+  .cta-bloco { margin-top: 56px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .cta-bloco .nota { font-family: var(--mono); font-size: 12px; color: var(--ink-mute); letter-spacing: 0.03em; }
+  section.pain .cta-bloco .nota, section.numero .cta-bloco .nota { color: rgba(250,247,242,0.5); }
+  .btn-sm { font-size: 15px; padding: 13px 20px; }
+
+  /* Comparativo em duas faixas (padrão DataCrazy): o caos em cima, o consolidado embaixo.
+     Sem citar concorrente, e sem depender de base de clientes. */
+  .comparativo { background: var(--paper-2); }
+  .comp-faixa { border: 1px solid var(--line); border-radius: 14px; padding: 28px; background: var(--paper); }
+  .comp-faixa + .comp-faixa { margin-top: 16px; }
+  .comp-faixa.antes { background: var(--paper-2); border-style: dashed; }
+  .comp-rotulo { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--ink-mute); margin-bottom: 6px; }
+  .comp-faixa h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.4vw, 30px); line-height: 1.2; margin: 0 0 18px; letter-spacing: -0.015em; }
+  .comp-itens { display: flex; flex-wrap: wrap; gap: 10px; }
+  .comp-itens span {
+    font-size: 14px; padding: 9px 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft);
+  }
+  .comp-faixa.depois .comp-itens span {
+    border-color: var(--flame); background: #FFF6EF; color: var(--flame-deep); font-weight: 500;
+  }
+  .comp-fecho { margin-top: 20px; font-size: 16px; color: var(--ink-soft); }
+  .comp-fecho strong { color: var(--ink); font-weight: 600; }
+
+  /* Faixa de integrações, dentro da seção da plataforma. Poucas e nomeadas, nunca grade vazia. */
+  .integra { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .integra h4 { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--ink-mute); margin: 0 0 16px; font-weight: 500; }
+  .integra-itens { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .integra-itens span { font-family: var(--mono); font-size: 12.5px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); background: var(--paper); }
+  .integra p { margin: 14px 0 0; font-size: 14.5px; color: var(--ink-mute); }
 </style>
 <link rel="stylesheet" href="quiz.css">
 <script src="medicao.js"></script>
@@ -888,8 +945,22 @@
     </div>
     <div class="microcopy">
       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg> Diagnóstico em 2 minutos</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg> Implantação feita por nós</span>
       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg> 30 dias de garantia</span>
       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg> API Oficial WhatsApp</span>
+    </div>
+
+    <!-- Chips de recurso: índice visual do produto sem precisar rolar. Padrão que a Poli usa
+         logo abaixo do H1, e que resolve "o que exatamente isso faz" na primeira dobra. -->
+    <div class="hero-chips">
+      <span>Central multicanal</span>
+      <span>Funil Kanban</span>
+      <span>Robô no primeiro contato</span>
+      <span>Agentes de IA</span>
+      <span>Campanhas e reativação</span>
+      <span>Supervisão em tempo real</span>
+      <span>Dashboard no Looker</span>
+      <span>API Oficial do WhatsApp</span>
     </div>
 
     <!-- PAINEL REAL -->
@@ -964,6 +1035,11 @@
 
     <div class="pain-close">
       Você não tem um problema de vendas. Você tem um problema de <em>organização e controle</em> do atendimento — e isso custa caro todo dia.
+    </div>
+
+    <div class="cta-bloco">
+      <a href="#diagnostico" class="btn btn-primary btn-sm">Descobrir qual é o meu caso</a>
+      <span class="nota">7 perguntas, resultado na hora</span>
     </div>
   </div>
 </section>
@@ -1146,6 +1222,80 @@
         <h3>Canal oficial da Meta</h3>
         <p>O nome da sua empresa aparece verificado na conversa, com bem menos risco de bloqueio.</p>
       </div>
+      <!-- Seção de IA é pré-requisito: as 7 páginas analisadas lideram ou destacam IA. A
+           diferença aqui é construir com o que a plataforma faz, e não com futurismo. -->
+      <div class="cap">
+        <h3>Agentes de IA que qualificam antes de você entrar</h3>
+        <p>Eles atendem o primeiro contato, entendem o que a pessoa quer e separam quem está pronto pra fechar de quem só perguntou. Você entra na conversa que vale.</p>
+      </div>
+      <div class="cap">
+        <h3>Um painel com os números da operação</h3>
+        <p>Quantas conversas entraram, quantas viraram cliente e onde elas param. Dashboard no Looker Studio, montado pela ORL360, nos planos Chama e Fogo.</p>
+      </div>
+    </div>
+
+    <!-- Integrações nomeadas e poucas. Grade grande com pouca coisa dentro denuncia; a lista
+         curta mais "o resto por API" é honesta e resolve a mesma objeção. -->
+    <div class="integra">
+      <h4>Conecta com o que você já usa</h4>
+      <div class="integra-itens">
+        <span>Make.com</span>
+        <span>n8n</span>
+        <span>Webhook</span>
+        <span>API REST</span>
+        <span>ManyChat</span>
+        <span>Looker Studio</span>
+      </div>
+      <p>Se você já tem automação rodando, ela continua rodando. O que não estiver na lista se conecta por API ou webhook, sem precisar de programador do seu lado.</p>
+    </div>
+
+    <div class="cta-bloco">
+      <a href="#diagnostico" class="btn btn-primary btn-sm">Ver o que disso resolve o meu caso</a>
+      <span class="nota">o diagnóstico aponta, o plano vem depois</span>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARATIVO (W7) ................................................................
+     Construção que a DataCrazy usa e que funciona sem base de clientes: o caos empilhado
+     em cima, o consolidado embaixo. Nenhum concorrente é citado. -->
+<section class="comparativo">
+  <div class="container-narrow">
+    <span class="section-label">O que muda</span>
+    <h2>O problema quase nunca é falta de ferramenta. É <em>ferramenta demais, sem conversar</em>.</h2>
+
+    <div class="comp-faixa antes">
+      <div class="comp-rotulo">Como costuma ser hoje</div>
+      <h3>Cada pedaço do atendimento num lugar</h3>
+      <div class="comp-itens">
+        <span>WhatsApp no celular de cada um</span>
+        <span>Agenda no papel</span>
+        <span>Planilha de clientes</span>
+        <span>Caderno de orçamento</span>
+        <span>Grupo interno pra combinar</span>
+        <span>Disparo por app não oficial</span>
+        <span>Nada disso conversa</span>
+      </div>
+      <p class="comp-fecho">Ninguém sabe quem falou com quem, o que ficou combinado, nem quantas pessoas pararam no meio. <strong>E o número vive sob risco.</strong></p>
+    </div>
+
+    <div class="comp-faixa depois">
+      <div class="comp-rotulo">Com a CHAMA 360</div>
+      <h3>Um painel só, com dono e etapa em cada conversa</h3>
+      <div class="comp-itens">
+        <span>Um número, a equipe inteira dentro</span>
+        <span>Funil com etapa e responsável</span>
+        <span>Histórico que não se perde</span>
+        <span>Robô no primeiro contato</span>
+        <span>Campanha pra quem sumiu</span>
+        <span>Canal oficial da Meta</span>
+      </div>
+      <p class="comp-fecho">A mesma operação, com <strong>uma tela em vez de sete</strong> — e a implantação é nossa.</p>
+    </div>
+
+    <div class="cta-bloco">
+      <a href="#diagnostico" class="btn btn-primary btn-sm">Ver quantos furos eu tenho hoje</a>
+      <span class="nota">sem cadastro, resultado na tela</span>
     </div>
   </div>
 </section>
@@ -1164,6 +1314,11 @@
     <div class="honesto">
       <strong>O que a gente não promete:</strong> que dá pra disparar o que quiser, do jeito que quiser, sem consequência. <strong>O que a gente promete:</strong> que, dentro das regras da Meta, o seu número para de viver com medo de sumir do dia pra noite.
     </div>
+
+    <div class="cta-bloco">
+      <a href="#diagnostico" class="btn btn-primary btn-sm">Fazer o diagnóstico</a>
+      <span class="nota">2 minutos, sem cadastro</span>
+    </div>
   </div>
 </section>
 
@@ -1180,6 +1335,11 @@
       <li>Montamos o seu funil, os seus robôs e as suas campanhas com o seu conteúdo.</li>
       <li>Você recebe a operação funcionando, com acompanhamento no seu setup.</li>
     </ol>
+
+    <div class="cta-bloco">
+      <a href="#diagnostico" class="btn btn-primary btn-sm">Começar pelo diagnóstico</a>
+      <a href="https://wa.me/5511981670838?text=Ol%C3%A1%2C%20quero%20entender%20como%20funciona%20a%20implanta%C3%A7%C3%A3o" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="color:var(--ink);border-color:var(--line);">Perguntar sobre a implantação</a>
+    </div>
   </div>
 </section>
 
@@ -1224,6 +1384,14 @@
       </div>
     </div>
     <p class="depo-aviso">Seção provisória. Entra no ar com 3 a 5 depoimentos reais, foto, profissão e cidade.</p>
+    <!-- Na coleta, pedir NÚMERO dentro da aspa. As páginas que mais convertem da varredura
+         (Sellflux, Kommo) não usam depoimento genérico: usam "saímos de prejuízo de 15% para
+         lucro de 20%". Com 20 clientes, cinco histórias com número valem mais que faixa de logo. -->
+
+    <div class="cta-bloco">
+      <a href="#diagnostico" class="btn btn-primary btn-sm">Ver o meu diagnóstico</a>
+      <span class="nota">antes de falar com qualquer pessoa</span>
+    </div>
   </div>
 </section>
 
@@ -1382,6 +1550,27 @@
           <button class="faq-q">Posso adicionar usuários e recursos depois?<span class="faq-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></button>
           <div class="faq-a"><p>Sim. Você pode contratar usuários adicionais, mais chatbots ou migrar de plano a qualquer momento, conforme sua operação cresce.</p></div>
         </div>
+        <!-- As três abaixo entraram em 31/08. Das 7 páginas de CRM analisadas, só duas têm FAQ
+             na home, e NENHUMA responde migração, cancelamento ou prazo de implantação. É a
+             brecha mais barata de ocupar.
+             TODO(Vitor): confirmar o texto de "E se eu quiser sair?" contra o contrato — o
+             card do Brasa diz "somente contrato anual", e há contratos Brasa semestral e
+             trimestral na aba Clientes. Enquanto isso a resposta fala de garantia, que é fato,
+             e remete ao contrato, sem afirmar prazo.
+             TODO(Orlando): dá pra declarar um prazo típico de implantação em vez de "a gente
+             te dá o prazo na conversa"? Prazo declarado converte melhor, mas só se for cumprível. -->
+        <div class="faq-item">
+          <button class="faq-q">Preciso trocar o meu número de WhatsApp?<span class="faq-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></button>
+          <div class="faq-a"><p>Não precisa. O seu número atual é conectado ao canal oficial da Meta durante a implantação, que é feita por nós. Quem já conhece o seu contato continua te achando no mesmo número.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">E se eu quiser sair?<span class="faq-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></button>
+          <div class="faq-a"><p>Nos primeiros 30 dias corridos a partir da ativação, você cancela e devolvemos 100% do que pagou, sem burocracia. Depois desse prazo valem as condições do plano que você contratou, e elas ficam escritas no contrato antes de você assinar, não em letra miúda.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Quanto tempo até estar funcionando?<span class="faq-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></button>
+          <div class="faq-a"><p>Depende de duas coisas: a verificação da sua empresa na Meta, que é o passo que não depende de nós, e a montagem do seu funil e dos seus robôs, que é nossa. A gente te dá o prazo real na conversa, olhando o seu caso, em vez de prometer um número igual para todo mundo.</p></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1426,8 +1615,11 @@
     <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;">© 2026 CHAMA 360</div>
   </div>
   <div class="container" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(250,247,242,0.08); display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(250,247,242,0.4);">
-    <div>ORL360VISAO LTDA&nbsp;&nbsp;·&nbsp;&nbsp;CNPJ 60.747.377/0001-30</div>
-    <div>© Todos os direitos reservados</div>
+    <!-- Razão social, CNPJ, cidade e telefone visíveis. Para marca que o lead não conhece,
+         isso é conversão, não burocracia: RD, Sellflux e DataCrazy fazem igual.
+         TODO(Vitor): acrescentar o horário de atendimento aqui, quando estiver definido. -->
+    <div>ORL360VISAO LTDA&nbsp;&nbsp;·&nbsp;&nbsp;CNPJ 60.747.377/0001-30&nbsp;&nbsp;·&nbsp;&nbsp;São Paulo/SP</div>
+    <div>WhatsApp 11 98167-0838&nbsp;&nbsp;·&nbsp;&nbsp;© Todos os direitos reservados</div>
   </div>
 </footer>
 

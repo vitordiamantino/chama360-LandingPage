@@ -21,9 +21,10 @@ import { VSL_POR_PROFISSAO, resolverVsl } from './vsl.js';
 
 const TOTAL = 7;
 let ok = 0;
+let falhas = 0;
 function teste(nome, fn) {
   try { fn(); ok++; console.log('  ok  ', nome); }
-  catch (e) { console.error('  FALHOU', nome, '\n      ', e.message); process.exitCode = 1; }
+  catch (e) { falhas++; console.error('  FALHOU', nome, '\n      ', e.message); process.exitCode = 1; }
 }
 
 // Percorre a árvore escolhendo, em cada pergunta, a opção de índice `escolha`.
@@ -91,7 +92,7 @@ teste('toda pergunta com variante declara a letra, e o número casa', () => {
 
 console.log('\nvocabulário e diagnóstico');
 
-teste('nenhum placeholder sobra sem tradução, em nenhuma das 9 profissões', () => {
+teste('nenhum placeholder sobra sem tradução, em nenhuma das profissões da lista', () => {
   const textos = [];
   Object.values(PERGUNTAS).forEach((p) => {
     textos.push(p.texto, p.ajuda || '');
@@ -151,9 +152,21 @@ function percorrerNicho(nicho, escolher) {
   return { respostas, caminho, numeros };
 }
 
-teste('a camada 1 tem os três nichos decididos em 28/08', () => {
-  assert.deepEqual(NICHOS_PROPRIOS.sort(), ['corretor', 'dentista', 'personal'],
-    'a camada 1 mudou sem o gate: era Personal, Corretor e Dentista');
+teste('a camada 1 tem exatamente os nichos decididos', () => {
+  // Guarda de decisão, não de implementação: camada 1 custa revisão de dores pelo Orlando e uma
+  // aba nova na planilha por nicho. Mexer aqui sem o gate é o que este teste existe para pegar.
+  //
+  // 28/08: Personal, Corretor e Dentista.
+  // 31/08: o Vitor pediu perguntas próprias para as praças novas da pesquisa de profissões.
+  //        Entram Corretor de Seguros, Veterinário e Oficina Mecânica — as três primeiras do
+  //        ranking, e as três cuja dor não tem equivalente no genérico (renovação de apólice,
+  //        retorno de vacina, box travado). AGUARDA CONFIRMAÇÃO DO VITOR.
+  //
+  // Camada 1 de QUIZ não obriga camada 1 de VSL: `resolverVsl` cai no `default` para quem não
+  // tem `vturbId`, então isto não acrescenta gravação nenhuma à fila do Orlando.
+  assert.deepEqual(NICHOS_PROPRIOS.sort(),
+    ['corretor', 'corretor_seguros', 'dentista', 'oficina', 'personal', 'veterinario'],
+    'a camada 1 mudou sem o gate');
 });
 
 teste('todo nicho termina, com o número de perguntas que promete', () => {
@@ -213,7 +226,8 @@ teste('a ordem de exibição cobre exatamente as dores do nicho, com cegueira na
 });
 
 teste('nicho de camada 2 e profissão desconhecida caem no genérico', () => {
-  ['esteticista', 'nutri', 'advogado', 'psicologo', 'fisio', 'cabeleireiro', 'medico', 'outra']
+  ['esteticista', 'nutri', 'advogado', 'psicologo', 'fisio', 'cabeleireiro', 'medico',
+   'barbearia', 'pilates', 'arquiteto', 'contador', 'outra']
     .forEach((id) => {
       assert.equal(resolverQuiz(id), QUIZ_POR_NICHO.default, `${id} deveria cair no quiz genérico`);
     });
@@ -221,11 +235,16 @@ teste('nicho de camada 2 e profissão desconhecida caem no genérico', () => {
   assert.equal(resolverQuiz(undefined), QUIZ_POR_NICHO.default, 'antes da pergunta 1 o quiz é o genérico');
 });
 
-teste('as duas profissões novas do W8 estão na lista', () => {
+teste('as profissões acrescentadas depois dos criativos continuam na lista', () => {
   const ids = PROFISSOES.map((p) => p.id);
-  assert.ok(ids.includes('cabeleireiro'), 'cabeleireiro entrou na camada 2 pela decisão de 28/08');
-  assert.ok(ids.includes('medico'), 'médico entrou na camada 2 pela decisão de 28/08');
+  // 28/08, W8
+  ['cabeleireiro', 'medico'].forEach((id) =>
+    assert.ok(ids.includes(id), `${id} entrou na camada 2 pela decisão de 28/08`));
+  // 31/08, pesquisa de profissões que mais dependem de WhatsApp
+  ['corretor_seguros', 'veterinario', 'oficina', 'barbearia', 'pilates', 'arquiteto', 'contador']
+    .forEach((id) => assert.ok(ids.includes(id), `${id} entrou pela pesquisa de 31/08`));
   assert.equal(ids[ids.length - 1], 'outra', '"outra profissão" precisa continuar sendo a última opção da lista');
+  assert.equal(new Set(ids).size, ids.length, 'id de profissão repetido: o quiz resolveria o nicho errado');
 });
 
 teste('nenhum placeholder sobra nos textos de nicho', () => {
@@ -731,4 +750,11 @@ teste('nenhuma página aponta para imagem que não existe', () => {
   });
 });
 
-console.log(`\n${ok} checagens passaram\n`);
+// A linha final precisa dizer que houve falha. Antes ela imprimia só o número de passes, então
+// `npm test | tail` mostrava "56 checagens passaram" com uma quebrada no meio e exit 1 — verde
+// aos olhos de quem lê o fim da saída. É o mesmo modo de falha já documentado no cofre.
+if (falhas) {
+  console.error(`\n${falhas} FALHA(S) e ${ok} checagens passaram — a suíte está VERMELHA\n`);
+} else {
+  console.log(`\n${ok} checagens passaram\n`);
+}

@@ -25,6 +25,22 @@ export const PROFISSOES = [
   // pergunta 2. Os dois usam o quiz e a VSL padrão, sem uma linha de código a mais.
   { id: 'cabeleireiro',label: 'Cabeleireiro ou Cabeleireira', cliente: 'cliente', plural: 'clientes', ocupado: 'atendendo na cadeira', espera: 'quem quer marcar um horário' },
   { id: 'medico',      label: 'Médico ou Médica',      cliente: 'paciente', plural: 'pacientes', ocupado: 'em consulta',             espera: 'quem quer marcar consulta' },
+
+  // Praças novas, 31/08. Ordem e recorte vêm da pesquisa de profissões que mais dependem de
+  // WhatsApp, aplicando os mesmos 4 filtros do W8 (volume · o dono responde · o conselho deixa
+  // falar · consegue pagar R$447). Fontes por nicho no log de produção de 31/08.
+  //
+  // Corretor de seguros, veterinário e oficina ganharam quiz próprio (camada 1) porque a dor
+  // deles não é a mesma do genérico: renovação de apólice, retorno de vacina e box travado não
+  // têm equivalente na árvore padrão. Os outros quatro usam o genérico.
+  { id: 'corretor_seguros', label: 'Corretor de Seguros',  cliente: 'cliente', plural: 'clientes', ocupado: 'resolvendo um sinistro',   espera: 'quem pediu uma cotação' },
+  { id: 'veterinario', label: 'Veterinário ou Clínica Veterinária', cliente: 'tutor', plural: 'tutores', ocupado: 'em atendimento',  espera: 'quem quer marcar consulta' },
+  { id: 'oficina',     label: 'Oficina Mecânica',      cliente: 'cliente',  plural: 'clientes',  ocupado: 'com o carro no elevador', espera: 'quem está esperando orçamento' },
+  { id: 'barbearia',   label: 'Barbearia',             cliente: 'cliente',  plural: 'clientes',  ocupado: 'atendendo na cadeira',    espera: 'quem quer marcar um horário' },
+  { id: 'pilates',     label: 'Estúdio de Pilates ou Academia', cliente: 'aluno', plural: 'alunos', ocupado: 'dando aula',          espera: 'quem quer fazer uma aula experimental' },
+  { id: 'arquiteto',   label: 'Arquiteto ou Designer de Interiores', cliente: 'cliente', plural: 'clientes', ocupado: 'visitando uma obra', espera: 'quem pediu uma proposta' },
+  { id: 'contador',    label: 'Contador ou Escritório de Contabilidade', cliente: 'cliente', plural: 'clientes', ocupado: 'fechando um balanço', espera: 'quem mandou um documento' },
+
   { id: 'outra',       label: 'Outra profissão',       cliente: 'cliente',  plural: 'clientes',  ocupado: 'com a mão ocupada',       espera: 'quem quer comprar de você' },
 ];
 
@@ -338,6 +354,92 @@ const DORES_DENTISTA = {
   },
 };
 
+// ------------------------------------------------------------------------------------------
+// Praças novas de 31/08. Mesma disciplina do W8: a dor é descrita pelo que o profissional
+// PERDE, nunca por número que ele não deu, e nenhuma estatística entra no texto.
+// ------------------------------------------------------------------------------------------
+
+const DORES_CORRETOR_SEGUROS = {
+  cegueira: {
+    titulo: 'Você não tem o número',
+    texto: 'Sem saber quantas cotações viram apólice e quantas apólices venceram sem renovar, não dá pra saber se o furo está na venda nova ou na carteira que você já tem.',
+  },
+  renovacao_perdida: {
+    titulo: 'A apólice venceu e ninguém avisou',
+    texto: 'É a perda mais cara da sua lista, porque não é uma venda: é comissão que se repetia todo ano e parou. E quase sempre o cliente não saiu por preço, saiu porque outro corretor lembrou antes de você.',
+  },
+  cotacao_parada: {
+    titulo: 'Cotação enviada que ninguém retoma',
+    texto: 'O cliente pediu, você calculou, mandou. Ele não respondeu. Sem uma lista de quem parou nesse ponto, a cotação vira trabalho feito e não pago.',
+  },
+  sinistro_lento: {
+    titulo: 'O sinistro é a hora em que ele decide se fica',
+    texto: 'Ninguém avisa sinistro em horário comercial por educação. É batida, é roubo, é urgência. A demora nessa mensagem específica vale mais que a demora em todas as outras juntas.',
+  },
+  carteira_fria: {
+    titulo: 'O cliente só ouve falar de você quando vence',
+    texto: 'Um contato por ano, e ele é uma cobrança. É pouco pra sustentar um relacionamento que precisa competir com preço de concorrente todo aniversário da apólice.',
+  },
+  uma_apolice_so: {
+    titulo: 'Ele tem uma apólice e podia ter três',
+    texto: 'Quem já confia em você para o carro é quem tem menos resistência para vida, residencial ou saúde. Sem saber quem tem só uma, essa venda nunca é oferecida.',
+  },
+};
+
+const DORES_VETERINARIO = {
+  cegueira: {
+    titulo: 'Você não tem o número',
+    texto: 'Sem saber quantos tutores chamam por semana e quantos viram consulta, não dá pra saber se falta gente chegando ou se está escapando na porta.',
+  },
+  retorno_vacina: {
+    titulo: 'A vacina do ano que vem ninguém lembra',
+    texto: 'É a receita mais previsível que existe na clínica, e a mais abandonada. O tutor não tem calendário na cabeça, e sem lembrete o retorno anual simplesmente não acontece.',
+  },
+  emergencia_sem_resposta: {
+    titulo: 'A urgência chegou fora do horário',
+    texto: 'Animal passando mal não espera abrir. Quem não é respondido nessa hora não perde uma consulta: leva o cartão de vacina inteiro pra outra clínica, e o resto da vida do bicho junto.',
+  },
+  agenda_banho: {
+    titulo: 'O horário desmarcado que ninguém reocupa',
+    texto: 'A remarcação chega por mensagem, é combinada de cabeça e nunca entra na agenda. O horário fica vago, e a fila de espera que existia não é avisada.',
+  },
+  orcamento_exame: {
+    titulo: 'Exame e cirurgia orçados que param no ar',
+    texto: 'O tutor recebe o valor, diz que vai pensar e some. Não é recusa, é decisão adiada. Sem segundo contato, ela nunca é retomada.',
+  },
+  tutor_some: {
+    titulo: 'Atendeu uma vez e nunca mais viu',
+    texto: 'Consulta pontual sem nenhum acompanhamento depois. O tutor não fica com raiva, ele só não volta, porque nada nem ninguém lembrou dele.',
+  },
+};
+
+const DORES_OFICINA = {
+  cegueira: {
+    titulo: 'Você não tem o número',
+    texto: 'Sem saber quantos orçamentos você manda por semana e quantos viram serviço, não dá pra saber se o problema é preço, é demora, ou é ninguém ter cobrado resposta.',
+  },
+  orcamento_sem_resposta: {
+    titulo: 'Orçamento mandado que fica no vácuo',
+    texto: 'Você fotografou a peça, explicou, mandou o valor. O cliente sumiu. E enquanto ele não responde, você não pode nem começar nem liberar o carro.',
+  },
+  box_travado: {
+    titulo: 'Carro parado ocupando elevador',
+    texto: 'Essa é a sua dor que nenhum outro negócio tem: a indecisão do cliente ocupa espaço físico. Box parado não é serviço adiado, é o serviço seguinte que não entra.',
+  },
+  aprovacao_demorada: {
+    titulo: 'Achou um problema e o serviço parou',
+    texto: 'Abriu, encontrou outra coisa, precisa de aprovação. A mensagem some no meio da conversa e o mecânico fica de mão parada esperando um "pode fazer".',
+  },
+  status_repetido: {
+    titulo: '"Meu carro tá pronto?"',
+    texto: 'A mesma pergunta, o dia inteiro, de gente diferente. Cada uma é rápida, e juntas comem a manhã de quem devia estar orçando serviço novo.',
+  },
+  revisao_esquecida: {
+    titulo: 'Consertou e nunca mais chamou',
+    texto: 'O cliente volta quando quebra de novo, e às vezes volta pra outro. A próxima revisão tem data previsível e ninguém usa isso pra trazer ele de volta.',
+  },
+};
+
 export const QUIZ_POR_NICHO = {
   // O genérico de hoje, intocado. É o que responde por toda a camada 2.
   default: {
@@ -547,6 +649,216 @@ export const QUIZ_POR_NICHO = {
           { valor: 'se_procura',label: 'Só se ele procurar',        peso: ['sem_retorno'] },
           { valor: 'deveria',   label: 'Deveria, mas não acontece', peso: ['sem_retorno'] },
           { valor: 'nunca',     label: 'Nunca pensei nisso',        peso: ['sem_retorno'] },
+        ],
+      },
+    ]),
+  },
+
+  // --------------------------------------------------------------------------------------
+  // Camada 1 nova, 31/08. Três praças cuja dor não cabe no genérico.
+  // --------------------------------------------------------------------------------------
+
+  corretor_seguros: {
+    dores: DORES_CORRETOR_SEGUROS,
+    ordemDores: ['cegueira', 'renovacao_perdida', 'cotacao_parada', 'sinistro_lento', 'carteira_fria', 'uma_apolice_so'],
+    total: 7,
+    perguntas: listaLinear([
+      {
+        id: 'quemResponde',
+        texto: 'Quem responde o WhatsApp da corretora hoje?',
+        opcoes: [
+          { valor: 'so_eu',   label: 'Só eu' },
+          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
+          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
+          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['cotacao_parada'] },
+        ],
+      },
+      {
+        id: 'controleRenovacao',
+        texto: 'Como você sabe quais apólices vencem no mês que vem?',
+        ajuda: 'Vale como funciona de verdade, não como deveria funcionar.',
+        opcoes: [
+          { valor: 'sistema_meu',  label: 'Tenho um controle meu e aviso com antecedência' },
+          { valor: 'seguradora',   label: 'Espero o aviso da seguradora',        peso: ['renovacao_perdida'] },
+          { valor: 'planilha',     label: 'Planilha, quando eu lembro de olhar', peso: ['renovacao_perdida'] },
+          { valor: 'cliente_avisa',label: 'Na prática o cliente me procura',     peso: ['renovacao_perdida', 'carteira_fria'] },
+        ],
+      },
+      {
+        id: 'cotacaoSumiu',
+        texto: 'Você mandou a cotação e o cliente não respondeu. O que acontece?',
+        opcoes: [
+          { valor: 'rotina',    label: 'Tenho rotina de retomar' },
+          { valor: 'se_lembro', label: 'Retomo se eu lembrar',   peso: ['cotacao_parada'] },
+          { valor: 'nada',      label: 'Fica por isso mesmo',    peso: ['cotacao_parada'] },
+          { valor: 'nao_sei',   label: 'Não tenho como saber quantas estão paradas assim', peso: ['cotacao_parada', 'cegueira'] },
+        ],
+      },
+      {
+        id: 'sinistroForaHora',
+        texto: 'Um cliente avisa sinistro à noite ou no fim de semana. O que acontece com essa mensagem?',
+        opcoes: [
+          { valor: 'atendo',      label: 'Eu atendo na hora, é prioridade' },
+          { valor: 'so_no_dia',   label: 'Vejo só no dia útil seguinte',  peso: ['sinistro_lento'] },
+          { valor: 'as_vezes',    label: 'Depende de eu ver a notificação', peso: ['sinistro_lento'] },
+          { valor: 'perde',       label: 'Já perdi cliente exatamente assim', peso: ['sinistro_lento', 'carteira_fria'] },
+        ],
+      },
+      {
+        id: 'contatoNoAno',
+        texto: 'Fora renovação e sinistro, quantas vezes você fala com um cliente da carteira no ano?',
+        opcoes: [
+          { valor: 'varias',   label: 'Várias, mantenho contato' },
+          { valor: 'uma_duas', label: 'Uma ou duas',                    peso: ['carteira_fria'] },
+          { valor: 'so_vence', label: 'Só quando a apólice vence',      peso: ['carteira_fria'] },
+          { valor: 'nao_sei',  label: 'Não sei dizer',                  peso: ['carteira_fria', 'cegueira'] },
+        ],
+      },
+      {
+        id: 'umaApolice',
+        texto: 'Você consegue listar agora quais clientes têm só uma apólice com você?',
+        opcoes: [
+          { valor: 'listo',     label: 'Sim, tenho isso separado' },
+          { valor: 'de_cabeca', label: 'Sei de cabeça alguns',  peso: ['uma_apolice_so'] },
+          { valor: 'daria',     label: 'Daria trabalho levantar', peso: ['uma_apolice_so'] },
+          { valor: 'nao',       label: 'Não, não tenho como',   peso: ['uma_apolice_so', 'cegueira'] },
+        ],
+      },
+    ]),
+  },
+
+  veterinario: {
+    dores: DORES_VETERINARIO,
+    ordemDores: ['cegueira', 'retorno_vacina', 'emergencia_sem_resposta', 'agenda_banho', 'orcamento_exame', 'tutor_some'],
+    total: 7,
+    perguntas: listaLinear([
+      {
+        id: 'quemResponde',
+        texto: 'Quem responde o WhatsApp da clínica hoje?',
+        opcoes: [
+          { valor: 'so_eu',   label: 'Só eu' },
+          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
+          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
+          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['emergencia_sem_resposta'] },
+        ],
+      },
+      {
+        id: 'retornoVacina',
+        texto: 'Como o tutor fica sabendo que a vacina do animal vence?',
+        opcoes: [
+          { valor: 'chamamos',   label: 'A gente chama, tem controle disso' },
+          { valor: 'cartao',     label: 'Está anotado no cartão, ele que se lembre', peso: ['retorno_vacina'] },
+          { valor: 'quando_da',  label: 'Quando alguém lembra de olhar',   peso: ['retorno_vacina'] },
+          { valor: 'nao_chama',  label: 'A gente não chama',               peso: ['retorno_vacina', 'tutor_some'] },
+        ],
+      },
+      {
+        id: 'foraDoHorario',
+        texto: 'Chega uma mensagem de urgência fora do horário. O que acontece?',
+        opcoes: [
+          { valor: 'plantao',     label: 'Temos plantão e respondemos' },
+          { valor: 'vejo_depois', label: 'Vejo quando abro no dia seguinte', peso: ['emergencia_sem_resposta'] },
+          { valor: 'se_eu_ver',   label: 'Depende de eu ver no celular',     peso: ['emergencia_sem_resposta'] },
+          { valor: 'ja_perdi',    label: 'Já perdi cliente por isso',        peso: ['emergencia_sem_resposta', 'tutor_some'] },
+        ],
+      },
+      {
+        id: 'remarcacao',
+        texto: 'O tutor desmarca o banho ou a consulta por mensagem. Esse horário é reocupado?',
+        opcoes: [
+          { valor: 'lista',      label: 'Sim, chamamos alguém da lista de espera' },
+          { valor: 'as_vezes',   label: 'Às vezes, se alguém lembrar',   peso: ['agenda_banho'] },
+          { valor: 'fica_vago',  label: 'Fica vago mesmo',               peso: ['agenda_banho'] },
+          { valor: 'nem_anota',  label: 'Muitas vezes nem chega a ser anotado na agenda', peso: ['agenda_banho', 'cegueira'] },
+        ],
+      },
+      {
+        id: 'orcamentoExame',
+        texto: 'Você passou o valor de um exame ou cirurgia e o tutor não voltou. E aí?',
+        opcoes: [
+          { valor: 'retomamos', label: 'A gente retoma depois de uns dias' },
+          { valor: 'se_lembrar',label: 'Só se alguém lembrar',   peso: ['orcamento_exame'] },
+          { valor: 'nada',      label: 'Fica por isso mesmo',    peso: ['orcamento_exame'] },
+          { valor: 'nao_sei',   label: 'Não sei quantos estão parados assim', peso: ['orcamento_exame', 'cegueira'] },
+        ],
+      },
+      {
+        id: 'quantosTutores',
+        texto: 'Quantos tutores novos chamaram a clínica no mês passado?',
+        opcoes: [
+          { valor: 'anotado',     label: 'Sei, tenho anotado' },
+          { valor: 'mais_menos',  label: 'Sei mais ou menos' },
+          { valor: 'nao_ideia',   label: 'Não tenho ideia',    peso: ['cegueira'] },
+          { valor: 'nunca_contei',label: 'Nunca contei isso',  peso: ['cegueira'] },
+        ],
+      },
+    ]),
+  },
+
+  oficina: {
+    dores: DORES_OFICINA,
+    ordemDores: ['cegueira', 'orcamento_sem_resposta', 'box_travado', 'aprovacao_demorada', 'status_repetido', 'revisao_esquecida'],
+    total: 7,
+    perguntas: listaLinear([
+      {
+        id: 'quemResponde',
+        texto: 'Quem responde o WhatsApp da oficina hoje?',
+        opcoes: [
+          { valor: 'so_eu',   label: 'Só eu' },
+          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
+          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
+          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['orcamento_sem_resposta'] },
+        ],
+      },
+      {
+        id: 'tempoOrcamento',
+        texto: 'Depois que você monta o orçamento, quanto tempo até ele chegar no cliente?',
+        opcoes: [
+          { valor: 'na_hora',     label: 'Mando na hora, com foto' },
+          { valor: 'algumas_horas',label: 'Alguma hora do mesmo dia' },
+          { valor: 'fim_do_dia',  label: 'Só no fim do dia',        peso: ['orcamento_sem_resposta'] },
+          { valor: 'dia_seguinte',label: 'Às vezes só no dia seguinte', peso: ['orcamento_sem_resposta', 'box_travado'] },
+        ],
+      },
+      {
+        id: 'carroParado',
+        texto: 'O cliente não responde o orçamento. O carro fica onde?',
+        ajuda: 'Essa é a pergunta que separa a sua oficina de qualquer outro negócio.',
+        opcoes: [
+          { valor: 'patio',     label: 'Sai do elevador e vai pro pátio' },
+          { valor: 'elevador',  label: 'Fica no elevador esperando',    peso: ['box_travado'] },
+          { valor: 'trava',     label: 'Trava o box e atrasa o serviço seguinte', peso: ['box_travado'] },
+          { valor: 'nao_sei',   label: 'Não sei dizer quantos estão parados assim agora', peso: ['box_travado', 'cegueira'] },
+        ],
+      },
+      {
+        id: 'servicoExtra',
+        texto: 'Abriu o carro e achou outro problema. Como sai a aprovação?',
+        opcoes: [
+          { valor: 'rapido',    label: 'Mando foto e ele aprova rápido' },
+          { valor: 'demora',    label: 'Mando e demora horas pra responder', peso: ['aprovacao_demorada'] },
+          { valor: 'parado',    label: 'O mecânico fica parado esperando',   peso: ['aprovacao_demorada', 'box_travado'] },
+          { valor: 'faco_torco',label: 'Às vezes faço e torço pra ele aceitar', peso: ['aprovacao_demorada'] },
+        ],
+      },
+      {
+        id: 'statusCarro',
+        texto: 'Quantas vezes por dia alguém pergunta se o carro já está pronto?',
+        opcoes: [
+          { valor: 'poucas',   label: 'Poucas, a gente já avisa antes' },
+          { valor: 'varias',   label: 'Várias, é parte do dia',        peso: ['status_repetido'] },
+          { valor: 'o_tempo',  label: 'O tempo todo, atrapalha o serviço', peso: ['status_repetido'] },
+          { valor: 'nao_conto',label: 'Nunca parei pra contar',        peso: ['status_repetido', 'cegueira'] },
+        ],
+      },
+      {
+        id: 'proximaRevisao',
+        texto: 'O cliente fez o serviço e foi embora. Ele é chamado pra próxima revisão?',
+        opcoes: [
+          { valor: 'chamamos', label: 'Sim, a gente chama' },
+          { valor: 'se_lembrar',label: 'Só se alguém lembrar',  peso: ['revisao_esquecida'] },
+          { valor: 'ele_volta', label: 'Ele volta quando quebrar de novo', peso: ['revisao_esquecida'] },
+          { valor: 'nunca',     label: 'Nunca fizemos isso',    peso: ['revisao_esquecida'] },
         ],
       },
     ]),
