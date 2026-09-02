@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    { "source": "/diagnostico", "destination": "/" }
+  "redirects": [
+    { "source": "/sobre", "destination": "/", "permanent": true }
   ],
   "headers": [
     {

@@ -1,30 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Só rotas que existem hoje. /diagnostico entra aqui no passo 1 da migração do W7,
-  quando o arquivo existir: sitemap apontando para página que ainda não foi criada
-  vira erro de cobertura no Search Console e derruba a confiança nas outras URLs.
+  Só rotas que existem hoje. /sobre saiu daqui no cutover do W7 (passo 3): virou 307 para /,
+  e URL que só redireciona no sitemap vira erro de cobertura no Search Console.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://chama360.vercel.app/</loc>
-    <lastmod>2026-08-28</lastmod>
+    <loc>https://chama360.com.br/</loc>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://chama360.vercel.app/sobre</loc>
-    <lastmod>2026-08-28</lastmod>
+    <loc>https://chama360.com.br/diagnostico</loc>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://chama360.vercel.app/privacidade</loc>
+    <loc>https://chama360.com.br/privacidade</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://chama360.vercel.app/termos</loc>
+    <loc>https://chama360.com.br/termos</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>

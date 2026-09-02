@@ -53,7 +53,7 @@ page.on('console', (m) => {
   if (m.type() === 'error' && !esperado) errosConsole.push(t);
 });
 
-await page.goto(`${BASE}/index.html?utm_source=ig&utm_campaign=dentista-dor`, { waitUntil: 'networkidle' });
+await page.goto(`${BASE}/diagnostico.html?utm_source=ig&utm_campaign=dentista-dor`, { waitUntil: 'networkidle' });
 // A fonte precisa ter carregado antes de medir qualquer coisa de layout.
 await page.evaluate(() => document.fonts.ready);
 await page.waitForTimeout(250);
@@ -66,7 +66,7 @@ conferir(await page.locator('#quiz-voltar').isHidden(), 'o botão voltar não ap
 // Quem cai aqui e quer conhecer o produto antes de responder precisa achar a porta sem procurar.
 const linkTopo = page.locator('.topo a.link');
 conferir(await linkTopo.isVisible(), 'o acesso à plataforma aparece no topo, sem precisar rolar');
-conferir((await linkTopo.getAttribute('href')) === '/sobre', 'o link do topo aponta para o institucional em /sobre');
+conferir((await linkTopo.getAttribute('href')) === '/', 'o link do topo aponta para o institucional, que é a home desde o cutover');
 conferir(await page.locator('#quiz-avancar').isDisabled(), 'continuar começa desabilitado, sem resposta escolhida');
 
 // O quiz precisa estar visível sem rolar. Se a primeira pergunta ficar abaixo da dobra,
@@ -164,7 +164,7 @@ conferir(player && player.height > 150, `o bloco da VSL está montado e com altu
 // única porta depois do diagnóstico é o WhatsApp, e quem não está pronto fecha a aba.
 const saida = page.locator('.saida');
 conferir(await saida.isVisible(), 'existe uma saída para a plataforma depois do diagnóstico');
-conferir((await saida.getAttribute('href')) === '/sobre', 'a saída aponta para o institucional em /sobre');
+conferir((await saida.getAttribute('href')) === '/', 'a saída aponta para o institucional, que é a home desde o cutover');
 const caixaSaida = await saida.boundingBox();
 const caixaZap = await page.locator('a[data-whatsapp]').first().boundingBox();
 conferir(caixaSaida && caixaZap && caixaSaida.y > caixaZap.y, 'a saída fica depois do botão do WhatsApp, não concorrendo com ele');
@@ -183,7 +183,7 @@ console.log('\nmobile, caminho "equipe sem regra"');
 const ctxM = await navegador.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
 const m = await ctxM.newPage();
 m.on('pageerror', (e) => errosConsole.push('mobile: ' + String(e)));
-await m.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
+await m.goto(`${BASE}/diagnostico.html`, { waitUntil: 'networkidle' });
 await m.evaluate(() => document.fonts.ready);
 await m.waitForTimeout(250);
 
@@ -240,7 +240,7 @@ console.log('\nquiz embutido no institucional');
   const p = await ctx.newPage();
   const errosSobre = [];
   p.on('pageerror', (e) => errosSobre.push(String(e)));
-  await p.goto(`${BASE}/sobre.html`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
   await p.evaluate(() => document.fonts.ready);
   await p.waitForTimeout(250);
 
@@ -288,38 +288,40 @@ console.log('\nquiz embutido no institucional');
 
   // A saída daqui não pode mandar para a própria página em que a pessoa já está.
   const saidaSobre = await p.locator('.saida').getAttribute('href');
-  conferir(saidaSobre === '#planos', `a saída daqui vai para os planos, e não para /sobre de novo (veio "${saidaSobre}")`);
+  conferir(saidaSobre === '#planos', `a saída daqui vai para os planos, e não recarrega a própria página (veio "${saidaSobre}")`);
 
   // A comparação entre os dois pontos de entrada só existe se a planilha souber distinguir de
   // qual deles o lead veio. Sem isto, as duas versões viram um número só e o teste não decide nada.
+  // Local serve o arquivo literal (/index.html), produção serve a rota limpa (/): aceitar os
+  // dois em vez de cravar um, senão o teste rasga sozinho ao trocar de ambiente.
   const enviadoSobre = await p.evaluate(() => window.__ultimoEnvio || null);
-  conferir(enviadoSobre && enviadoSobre.pagina.includes('sobre'),
-    `o envio daqui marca a página de origem como institucional (veio "${enviadoSobre?.pagina}")`);
+  conferir(enviadoSobre && (enviadoSobre.pagina === '/' || enviadoSobre.pagina.includes('index')),
+    `o envio daqui marca a página de origem como a home institucional (veio "${enviadoSobre?.pagina}")`);
 
   conferir(errosSobre.length === 0, `institucional sem erro de JavaScript${errosSobre.length ? ': ' + errosSobre.join(' | ') : ''}`);
   await p.screenshot({ path: `${SAIDA}/09-institucional-quiz.png`, fullPage: true });
   await p.close();
 }
 
-// O institucional precisa ter caminho de volta ao funil, senão vira beco sem saída.
+// O institucional precisa ter caminho para o funil dedicado, senão vira beco sem saída.
 {
   const p = await ctx.newPage();
-  await p.goto(`${BASE}/sobre.html`, { waitUntil: 'domcontentloaded' });
+  await p.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded' });
   const logoHref = await p.locator('nav .logo').first().getAttribute('href');
-  conferir(logoHref === '/', `a logo do institucional volta para a home, não para "#" (veio "${logoHref}")`);
-  const volta = p.locator('nav .nav-links a[href="/"]');
-  conferir(await volta.count() > 0, 'o menu do institucional tem caminho de volta para o diagnóstico');
+  conferir(logoHref === '/', `a logo do institucional fica na própria home, não em "#" (veio "${logoHref}")`);
+  const volta = p.locator('nav .nav-links a[href="/diagnostico"]');
+  conferir(await volta.count() > 0, 'o menu do institucional tem caminho para o diagnóstico dedicado');
   const zap = await p.locator('a[href*="wa.me"]').first().getAttribute('href');
   conferir(zap && zap.includes('5511981670838'), 'o institucional aponta para o mesmo WhatsApp do funil');
   await p.close();
 }
 
-for (const [rota, marcador] of [['privacidade.html', 'Política de Privacidade'], ['termos.html', 'Termos de Uso'], ['sobre.html', 'CHAMA']]) {
+for (const [rota, marcador] of [['privacidade.html', 'Política de Privacidade'], ['termos.html', 'Termos de Uso'], ['index.html', 'CHAMA']]) {
   const p = await ctx.newPage();
   const r = await p.goto(`${BASE}/${rota}`, { waitUntil: 'domcontentloaded' });
   const conteudo = await p.content();
   conferir(r.status() === 200 && conteudo.includes(marcador), `${rota} responde e contém "${marcador}"`);
-  if (rota !== 'sobre.html') await p.screenshot({ path: `${SAIDA}/08-${rota.replace('.html', '')}.png`, fullPage: true });
+  if (rota !== 'index.html') await p.screenshot({ path: `${SAIDA}/08-${rota.replace('.html', '')}.png`, fullPage: true });
   await p.close();
 }
 

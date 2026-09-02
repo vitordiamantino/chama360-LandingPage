@@ -16,13 +16,13 @@ esse risco.
 
 ## Páginas
 
-- [Diagnóstico do atendimento](https://chama360.vercel.app/): sete perguntas sobre como o
-  atendimento funciona hoje, com o resultado na hora, apontando por onde o negócio perde
-  cliente. Sem cadastro longo e sem custo.
-- [A plataforma](https://chama360.vercel.app/sobre): o que a CHAMA 360 faz, benefícios,
+- [A plataforma](https://chama360.com.br/): o que a CHAMA 360 faz, benefícios,
   planos, objeções comuns, garantia e perguntas frequentes.
-- [Política de Privacidade](https://chama360.vercel.app/privacidade)
-- [Termos de Uso](https://chama360.vercel.app/termos)
+- [Diagnóstico do atendimento](https://chama360.com.br/diagnostico): sete perguntas sobre como
+  o atendimento funciona hoje, com o resultado na hora, apontando por onde o negócio perde
+  cliente. Sem cadastro longo e sem custo.
+- [Política de Privacidade](https://chama360.com.br/privacidade)
+- [Termos de Uso](https://chama360.com.br/termos)
 
 ## Para quem é
 

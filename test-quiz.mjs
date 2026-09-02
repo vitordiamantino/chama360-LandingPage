@@ -589,8 +589,8 @@ teste('passados 30 dias, o registro antigo é tratado como inexistente', () => {
 });
 
 teste('sem campanha nenhuma, a página de entrada ainda é registrada', () => {
-  const novo = decidirAtribuicao(null, { origem: '', campanha: '', criativo: '', paginaEntrada: '/sobre', agora: AGORA });
-  assert.equal(novo.paginaEntrada, '/sobre', 'tráfego direto e orgânico também é informação');
+  const novo = decidirAtribuicao(null, { origem: '', campanha: '', criativo: '', paginaEntrada: '/', agora: AGORA });
+  assert.equal(novo.paginaEntrada, '/', 'tráfego direto e orgânico também é informação');
 });
 
 teste('o lead que volta dias depois ainda leva o criativo junto', () => {
@@ -675,8 +675,8 @@ teste('medição não derruba o funil quando não existe tag nenhuma', () => {
 
 // ---------------------------------------------------------------------------------------
 // Arquivos de SEO. Sitemap apontando para rota que não existe é erro de cobertura no Search
-// Console, e é exatamente o risco quando /diagnostico entrar no W7: alguém acrescenta a URL
-// aqui antes de o arquivo existir e ninguém percebe até o Google reclamar.
+// Console: alguém acrescenta a URL aqui antes de o arquivo existir e ninguém percebe até o
+// Google reclamar. Vale também para rota que só redireciona, como /sobre depois do cutover.
 // ---------------------------------------------------------------------------------------
 
 const ROTA_PARA_ARQUIVO = { '/': 'index.html' };
@@ -698,22 +698,28 @@ teste('robots.txt aponta para o sitemap e não bloqueia o site', () => {
   assert.doesNotMatch(robots, /^Disallow: \/$/m, 'Disallow: / tira o site inteiro do Google');
 });
 
-teste('vercel.json serve /diagnostico com o funil do quiz (W7 passo 1)', () => {
-  // Enquanto o cutover do W7 não chega, /diagnostico não é arquivo próprio: é um rewrite para
-  // o index.html, para os anúncios já poderem apontar para a rota nova. Se alguém tirar o
-  // rewrite antes de existir um diagnostico.html, a URL dos anúncios passa a 404 calada.
+teste('/diagnostico serve o funil do quiz, e a home serve o institucional (W7 passo 3)', () => {
+  // Depois do cutover as duas rotas são arquivo próprio, servido pelo cleanUrls. O que quebra
+  // calado aqui é alguém trocar o conteúdo de um pelo do outro: a URL dos anúncios continua
+  // 200, só que mostrando a página errada. Por isso a checagem olha o conteúdo, não o nome.
+  assert.ok(fs.existsSync('diagnostico.html'), 'diagnostico.html sumiu: a URL dos anúncios vira 404 calado');
+  const funil = fs.readFileSync('diagnostico.html', 'utf8');
+  assert.match(funil, /id="quiz-pergunta"/, '/diagnostico não tem o quiz: não é o funil');
+  const home = fs.readFileSync('index.html', 'utf8');
+  assert.match(home, /class="plan-name"/, 'a home não tem os planos: não é o institucional');
+});
+
+teste('/sobre continua resolvendo, agora como redirect para a home', () => {
+  // A rota foi aposentada no cutover, mas está indexada e circula em link antigo. Sem o
+  // redirect ela vira 404 e leva junto o que o Google já tinha acumulado nela.
   const cfg = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
-  const temArquivo = fs.existsSync('diagnostico.html');
-  const regra = (cfg.rewrites || []).find((r) => r.source === '/diagnostico');
-  const destinoFunil = regra && (regra.destination === '/' || regra.destination === '/index.html');
-  assert.ok(
-    temArquivo || destinoFunil,
-    '/diagnostico não resolve: sem diagnostico.html e sem rewrite para o funil no vercel.json',
-  );
+  const regra = (cfg.redirects || []).find((r) => r.source === '/sobre');
+  assert.ok(regra, '/sobre sem redirect no vercel.json: link antigo e resultado do Google viram 404');
+  assert.equal(regra.destination, '/', '/sobre precisa cair na home, que é o conteúdo que ele tinha');
 });
 
 teste('o JSON-LD de toda página parseia', () => {
-  ['index.html', 'sobre.html'].forEach((f) => {
+  ['index.html', 'diagnostico.html'].forEach((f) => {
     const blocos = [...fs.readFileSync(f, 'utf8')
       .matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
     assert.ok(blocos.length > 0, `${f} sem JSON-LD`);
@@ -726,7 +732,7 @@ teste('o JSON-LD de toda página parseia', () => {
 });
 
 teste('o FAQ estruturado promete as mesmas perguntas que a página mostra', () => {
-  const html = fs.readFileSync('sobre.html', 'utf8');
+  const html = fs.readFileSync('index.html', 'utf8');
   const ld = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
   const faq = ld['@graph'].find((n) => n['@type'] === 'FAQPage');
   const visiveis = [...html.matchAll(/<button class="faq-q">([^<]+)</g)].map((m) => m[1].trim());
@@ -738,10 +744,10 @@ teste('o FAQ estruturado promete as mesmas perguntas que a página mostra', () =
 });
 
 teste('a verificação do Search Console sobrevive à troca de páginas', () => {
-  // A tag está nas quatro páginas de propósito, e não só na home. O W7 vai trocar qual arquivo
-  // serve a "/", e uma verificação que morasse só no index cairia calada nessa migração: o
-  // Search Console desverifica a propriedade sem avisar, e o sitemap para de ser lido.
-  ['index.html', 'sobre.html', 'privacidade.html', 'termos.html'].forEach((f) => {
+  // A tag está nas quatro páginas de propósito, e não só na home. O cutover do W7 trocou qual
+  // arquivo serve a "/", e uma verificação que morasse só no index teria caído calada nessa
+  // migração: o Search Console desverifica a propriedade sem avisar, e o sitemap para de ser lido.
+  ['index.html', 'diagnostico.html', 'privacidade.html', 'termos.html'].forEach((f) => {
     assert.match(fs.readFileSync(f, 'utf8'), /name="google-site-verification" content="[^"]+"/,
       `${f} sem a meta de verificação do Search Console`);
   });
@@ -751,7 +757,7 @@ teste('os três planos do site batem com a estrutura oficial', () => {
   // O Fogo ficou dois meses no site a R$ 2.487 depois de ter sido reajustado para R$ 2.500 no
   // doc-fonte, e ninguém viu. Preço divergente no site é o erro mais caro que uma página de
   // planos comete: o lead entra na reunião com um número que a proposta não confirma.
-  const html = fs.readFileSync('sobre.html', 'utf8');
+  const html = fs.readFileSync('index.html', 'utf8');
   const planos = [
     { nome: 'Brasa', preco: '447' },
     { nome: 'Chama', preco: '747' },
@@ -771,7 +777,7 @@ teste('os três planos do site batem com a estrutura oficial', () => {
 });
 
 teste('nenhuma página aponta para imagem que não existe', () => {
-  ['index.html', 'sobre.html', 'privacidade.html', 'termos.html'].forEach((f) => {
+  ['index.html', 'diagnostico.html', 'privacidade.html', 'termos.html'].forEach((f) => {
     const refs = [...fs.readFileSync(f, 'utf8').matchAll(/(?:src|href)="(assets\/[^"]+)"/g)];
     refs.forEach((m) => {
       assert.ok(fs.existsSync(m[1]), `${f} aponta para ${m[1]}, que não existe`);

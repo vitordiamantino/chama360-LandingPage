@@ -9,4 +9,4 @@ Allow: /
 # A rota de gravação do lead não é página: não tem o que indexar e responde só a POST.
 Disallow: /api/
 
-Sitemap: https://chama360.vercel.app/sitemap.xml
+Sitemap: https://chama360.com.br/sitemap.xml

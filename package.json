@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Site da CHAMA 360: funil de quiz na home, institucional em /sobre.",
+  "description": "Site da CHAMA 360: institucional na home, funil de quiz em /diagnostico.",
   "scripts": {
     "test": "node test-quiz.mjs",
     "verificar:visual": "node verificar-visual.mjs",
