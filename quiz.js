@@ -316,6 +316,11 @@ async function enviar(e) {
       body: JSON.stringify(payload),
     });
     medir('quiz_lead_gravado', { codigo: estado.codigo });
+    // `Lead` é o evento PADRÃO da Meta, e vai ao lado do personalizado, não dentro do medir():
+    // o helper só faz trackCustom, e mover o track para dentro dele transformaria os sete
+    // eventos do quiz em conversão padrão. É por este evento que a campanha otimiza: um
+    // trackCustom não serve de objetivo de conjunto sem virar conversão personalizada.
+    try { if (typeof window.fbq === 'function') window.fbq('track', 'Lead', { codigo: estado.codigo }); } catch (e) { /* medição nunca derruba o funil */ }
   } catch (err) {
     // A gravação falhou, mas o lead já fez a parte dele. Mostrar o diagnóstico assim mesmo é
     // melhor que travar a página: ele ainda pode clicar no WhatsApp, que é o objetivo real.

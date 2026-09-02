@@ -673,6 +673,21 @@ teste('medição não derruba o funil quando não existe tag nenhuma', () => {
   } finally { globalThis.window = janelaAntiga; }
 });
 
+teste('o lead gravado dispara o evento Lead padrão da Meta, fora do medir()', () => {
+  const fonte = fs.readFileSync('quiz.js', 'utf8');
+  // O conjunto de anúncios otimiza por evento PADRÃO. Um trackCustom só serviria de objetivo
+  // virando conversão personalizada no painel, que ninguém lembra de recriar quando a conta
+  // de anúncios muda: a campanha volta a otimizar por clique sem ninguém perceber.
+  assert.ok(
+    fonte.includes("fbq('track', 'Lead'"),
+    'quiz.js parou de disparar o Lead padrão da Meta no caminho do lead gravado',
+  );
+  const corpoMedir = fonte.slice(fonte.indexOf('function medir('), fonte.indexOf('function el('));
+  // Dentro do medir() o track valeria para os SETE eventos do quiz, e a campanha passaria a
+  // otimizar por 'viu a pergunta 1'. É a regressão barata de cometer e cara de descobrir.
+  assert.ok(!corpoMedir.includes("'track',"), 'o Lead não pode morar dentro do medir()');
+});
+
 // ---------------------------------------------------------------------------------------
 // Arquivos de SEO. Sitemap apontando para rota que não existe é erro de cobertura no Search
 // Console: alguém acrescenta a URL aqui antes de o arquivo existir e ninguém percebe até o
