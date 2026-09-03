@@ -211,7 +211,7 @@
           </form>
         </div>
 
-        <!-- tela 3: diagnóstico + vsl + cta -->
+        <!-- tela 3: diagnóstico + cta -->
         <div id="tela-diagnostico" hidden>
           <div class="diag-topo">
             <h2 id="diag-titulo">Seu atendimento tem vazamentos.</h2>
@@ -226,16 +226,27 @@
               <span>guarde, ele abre a conversa no ponto certo</span>
             </div>
 
-            <div class="vsl">
-              <h3 id="vsl-titulo">O que fazer com isso, em 2 minutos</h3>
-              <p class="cap" id="vsl-legenda">Orlando, sócio da ORL360, explica por que isso acontece e como a gente resolve.</p>
-              <div class="player" id="player-vsl">
-                <div class="placeholder">
-                  <div class="play" aria-hidden="true"></div>
-                  O vídeo entra aqui assim que for gravado. O bloco já está no lugar certo e na medida certa.
+            <!--
+              O bloco da VSL saiu daqui em 03/09, quando esta página passou a receber tráfego pago:
+              enquanto o Orlando não grava, um espaço reservado dizendo "o vídeo entra aqui" custa
+              um degrau entre o diagnóstico e o WhatsApp sem entregar nada em troca. O caminho fica
+              diagnóstico -> botão, direto.
+
+              PARA VOLTAR quando a gravação existir: reponha este bloco (o `#player-vsl` é tudo que
+              o quiz.js procura, e a chamada lá está guardada por `if`), e vsl.js segue intacto com
+              título, legenda e vturbId por profissão.
+
+              <div class="vsl">
+                <h3 id="vsl-titulo">O que fazer com isso, em 2 minutos</h3>
+                <p class="cap" id="vsl-legenda">Orlando, sócio da ORL360, explica por que isso acontece e como a gente resolve.</p>
+                <div class="player" id="player-vsl">
+                  <div class="placeholder">
+                    <div class="play" aria-hidden="true"></div>
+                    O vídeo entra aqui assim que for gravado.
+                  </div>
                 </div>
               </div>
-            </div>
+            -->
 
             <div class="fechamento">
               <p>Se fizer sentido, a gente marca vinte minutos e te mostra a CHAMA 360 funcionando com o seu caso na tela.</p>

@@ -247,7 +247,12 @@ function renderDiagnostico() {
   // O player entra só agora, quando o diagnóstico aparece: não faz sentido carregar vídeo
   // para quem abandona no meio do quiz, e isso é a maioria. `prof` decide qual vídeo, título
   // e legenda: o do nicho quando ele tem gravação própria, o default enquanto não tem.
-  montarVsl(el('player-vsl'), medir, prof);
+  //
+  // O `if` existe porque as duas páginas que usam este quiz deixaram de ser iguais: desde 03/09
+  // o /diagnostico roda sem o bloco da VSL, e o institucional ainda tem o dele. Sem a guarda,
+  // montarVsl receberia null e derrubaria o diagnóstico inteiro da página que tirou o bloco.
+  const alvoVsl = el('player-vsl');
+  if (alvoVsl) montarVsl(alvoVsl, medir, prof);
 
   mostrar('diagnostico');
   medir('quiz_diagnostico_visto', {

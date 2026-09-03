@@ -157,8 +157,17 @@ conferir(decodeURIComponent(href).includes(codigo), 'a mensagem do WhatsApp leva
 conferir(decodeURIComponent(href).includes('Dentista'), 'a mensagem do WhatsApp leva a profissão');
 conferir(!decodeURIComponent(href).includes('Ana Paula'), 'a mensagem não usa o nome do lead, conforme a regra de primeiro contato');
 
-const player = await page.locator('#player-vsl').boundingBox();
-conferir(player && player.height > 150, `o bloco da VSL está montado e com altura real (${Math.round(player?.height ?? 0)}px)`);
+// 03/09: enquanto a VSL não é gravada, esta página vai ao ar sem vídeo nenhum. O que precisa
+// ser provado agora é o contrário do que se provava antes: que não sobrou espaço reservado de
+// vídeo na tela, e que o botão do WhatsApp vem logo depois da lista de vazamentos.
+conferir((await page.locator('#player-vsl').count()) === 0, 'nenhum bloco de vídeo sobrou no diagnóstico');
+conferir(!(await textoDe(page, '#tela-diagnostico')).includes('vídeo'), 'nenhum texto manda assistir a um vídeo que não existe');
+const caixaLista = await page.locator('#diag-lista').boundingBox();
+const caixaBotao = await page.locator('a[data-whatsapp]').first().boundingBox();
+conferir(
+  caixaLista && caixaBotao && caixaBotao.y - (caixaLista.y + caixaLista.height) < 400,
+  `o botão do WhatsApp vem logo depois do diagnóstico (${Math.round(caixaBotao?.y - (caixaLista?.y + caixaLista?.height))}px abaixo da lista)`,
+);
 
 // Quem terminou o quiz e ainda não quer falar com ninguém precisa de uma saída. Sem ela, a
 // única porta depois do diagnóstico é o WhatsApp, e quem não está pronto fecha a aba.
