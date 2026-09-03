@@ -61,12 +61,24 @@ function medir(evento, dados = {}) {
 function el(id) { return document.getElementById(id); }
 
 // Gera o código que vai na mensagem do WhatsApp e na planilha, para quem atende achar a linha.
-// Letra da profissão mais quatro dígitos. Não é identificador seguro e não precisa ser: serve
-// para casar uma conversa com uma linha, e a planilha é a fonte de verdade.
-function gerarCodigo(profissaoId) {
+// Letra da profissão, dia e mês, e quatro dígitos: C-0309-4721. Onze caracteres, dentro do limite
+// de 12 que a coluna D da planilha impõe.
+//
+// A data no meio faz duas coisas. Diz a quem atende em que dia procurar, e troca a colisão de
+// "alguma hora vai repetir" por "só repete entre dois leads do mesmo dia, da mesma letra e com os
+// mesmos quatro dígitos". Código de dias diferentes não colide nunca. Antes eram só quatro dígitos
+// sorteados: passando de umas 110 pessoas da mesma letra, era mais provável já existir um par
+// repetido do que não, e a letra sozinha não distingue nada (C serve a quatro profissões).
+//
+// Sequencial de verdade exigiria perguntar à planilha antes de mostrar o diagnóstico, e o
+// diagnóstico aparece MESMO quando a gravação falha, de propósito. Não vale trocar essa proteção
+// por um dígito mais bonito. Continua não sendo identificador seguro: a planilha é a fonte.
+function gerarCodigo(profissaoId, agora = new Date()) {
   const letra = (acharProfissao(profissaoId).label[0] || 'C').toUpperCase();
+  const dia = String(agora.getDate()).padStart(2, '0');
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
   const n = Math.floor(1000 + Math.random() * 9000);
-  return `${letra}-${n}`;
+  return `${letra}-${dia}${mes}-${n}`;
 }
 
 function perguntaAtual() { return quizAtual().perguntas[estado.atual]; }

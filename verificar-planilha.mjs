@@ -20,7 +20,8 @@ const CABECALHO = [
   'Página', 'Profissão (código)',
   'Origem atribuída', 'Criativo atribuído', 'Campanha atribuída', 'Página de entrada',
   // AA e AB entraram no W2, quiz por nicho. Coluna nova sempre no FIM.
-  'Respostas (JSON)', 'Quiz respondido',
+  // AA deixou de ser 'Respostas (JSON)' em 03/09: virou a mensagem pronta de abordagem.
+  'Abordagem', 'Quiz respondido',
 ];
 
 // String.fromCharCode(65 + i) só vale até Z: no índice 26 devolveria "[". Com 28 colunas a

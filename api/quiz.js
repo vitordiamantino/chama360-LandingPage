@@ -18,6 +18,7 @@
 
 import { google } from 'googleapis';
 import { QUIZ_POR_NICHO, PERGUNTAS, acharProfissao } from '../quiz-dados.js';
+import { montarAbordagem } from '../abordagem.js';
 
 const COLUNAS_MESTRE = 'A:AB';   // AA e AB entraram no W2: respostas_json e a lista de perguntas
 const UMA_HORA = 60 * 60 * 1000;
@@ -115,7 +116,12 @@ export function montarLinha(corpo, agoraISO) {
     limparTexto(atr.paginaEntrada, 90),        // Z  Página em que a pessoa entrou no site
     // AA e AB entram no FIM, nunca no meio: o site grava por letra fixa e inserir coluna no meio
     // desalinha a planilha inteira em silêncio.
-    JSON.stringify({ respostas: r, rotulos: rot, ordem: corpo.ordem || [] }),  // AA respostas_json
+    //
+    // AA guardava o JSON cru das respostas. Em 03/09 passou a guardar a mensagem pronta de
+    // abordagem, a pedido do Vitor: JSON não se usa para atender ninguém, e as respostas seguem
+    // legíveis nas colunas E a N, com a AB dizendo qual quiz foi respondido. As linhas gravadas
+    // antes desta data continuam com JSON aqui.
+    montarAbordagem(corpo),                    // AA Abordagem (mensagem pronta pra mandar)
     limparTexto(corpo.nicho, 30),              // AB  Qual lista de perguntas o lead respondeu
   ];
 }

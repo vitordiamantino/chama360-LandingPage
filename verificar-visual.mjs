@@ -149,7 +149,8 @@ conferir(doresNaTela.includes('Orçamento passado'), 'o diagnóstico traz o orç
 conferir(!doresNaTela.includes('Nenhuma conversa tem dono'), 'nenhuma dor genérica pode vazar para um nicho com quiz próprio');
 
 const codigo = await textoDe(page, '#diag-codigo');
-conferir(/^D-\d{4}$/.test(codigo), `o código começa com a letra da profissão: "${codigo}"`);
+conferir(/^D-\d{4}-\d{4}$/.test(codigo), `o código traz letra, dia/mês e quatro dígitos: "${codigo}"`);
+conferir(codigo.length <= 12, `o código cabe nos 12 caracteres da coluna D (${codigo.length})`);
 
 const href = await page.locator('a[data-whatsapp]').first().getAttribute('href');
 conferir(href.includes('wa.me/5511981670838'), 'o botão aponta para o WhatsApp certo');
@@ -291,7 +292,7 @@ console.log('\nquiz embutido no institucional');
   await p.waitForSelector('#tela-diagnostico:not([hidden])', { timeout: 8000 });
 
   const cod = await textoDe(p, '#diag-codigo');
-  conferir(/^A-\d{4}$/.test(cod), `o código sai com a letra do advogado: "${cod}"`);
+  conferir(/^A-\d{4}-\d{4}$/.test(cod), `o código sai com a letra do advogado: "${cod}"`);
   const hrefSobre = await p.locator('a[data-whatsapp]').first().getAttribute('href');
   conferir(decodeURIComponent(hrefSobre).includes('Advogado'), 'a mensagem do WhatsApp leva a profissão daqui também');
 

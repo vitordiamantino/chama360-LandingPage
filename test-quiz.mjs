@@ -18,6 +18,7 @@ import { montarLinha, abaDoNicho, cabecalhoNicho, montarLinhaNicho } from './api
 import { extrairParametros, decidirAtribuicao, registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { _interno } from './quiz.js';
 import { VSL_POR_PROFISSAO, resolverVsl } from './vsl.js';
+import { montarAbordagem, GANCHOS, todasAsDores, REMETENTE } from './abordagem.js';
 
 const TOTAL = 7;
 let ok = 0;
@@ -342,6 +343,124 @@ teste('título e legenda de cada vídeo são únicos', () => {
   assert.equal(new Set(titulos).size, titulos.length, 'há título de vídeo repetido entre nichos');
 });
 
+// ------------------------------------------------------------------------------------------
+// O código do diagnóstico. Era letra + 4 dígitos sorteados, e repetia: 9.000 combinações por
+// letra, sem checar as que já existem. O código é a ponte entre a mensagem que chega no WhatsApp
+// e a linha da planilha, então repetir quebra a ponte bem na hora de atender.
+// ------------------------------------------------------------------------------------------
+console.log('\ncódigo do diagnóstico');
+
+teste('o código leva letra, dia e mês, e quatro dígitos', () => {
+  const c = _interno.gerarCodigo('dentista', new Date(2026, 8, 3));
+  assert.match(c, /^D-0309-\d{4}$/, `formato errado: "${c}"`);
+});
+
+teste('o código cabe nos 12 caracteres da coluna D', () => {
+  // limparTexto(corpo.codigo, 12) em api/quiz.js corta em silêncio o que passar. Código cortado
+  // na planilha não bate com o que o lead viu na tela, e a busca falha justamente ali.
+  PROFISSOES.forEach((p) => {
+    const c = _interno.gerarCodigo(p.id, new Date(2026, 11, 31));
+    assert.ok(c.length <= 12, `${p.id} gerou "${c}", com ${c.length} caracteres`);
+  });
+});
+
+teste('a data no código é a de hoje, não uma constante esquecida', () => {
+  // Data cravada passaria em qualquer teste de formato e só apareceria meses depois, com todo
+  // lead marcado com o mesmo dia e a colisão de volta ao que era.
+  const hoje = new Date();
+  const dd = String(hoje.getDate()).padStart(2, '0');
+  const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+  assert.ok(_interno.gerarCodigo('personal').includes(`-${dd}${mm}-`), 'o código não traz a data de hoje');
+});
+
+// ------------------------------------------------------------------------------------------
+// A abordagem: o texto da coluna AA, pronto para quem atende copiar e mandar no WhatsApp.
+// ------------------------------------------------------------------------------------------
+console.log('\nabordagem escrita na planilha');
+
+const LEAD_BASE = {
+  nome: 'Márcia Souza',
+  codigo: 'C-0309-4721',
+  respostas: { profissao: 'cabeleireiro', quantos: '6a15', quemResponde: 'so_eu' },
+  vazamentos: ['demora', 'sem_retomada'],
+  nicho: 'default',
+};
+
+teste('a abordagem fala o vocabulário da profissão, não o genérico', () => {
+  const m = montarAbordagem(LEAD_BASE);
+  assert.ok(m.includes('marcar um horário'), 'o gancho precisa passar pelo vocabulário do cabeleireiro');
+  assert.ok(!m.includes('{'), `sobrou marcador cru no texto: "${m}"`);
+});
+
+teste('quem não sabe quantos escapam não recebe número inventado', () => {
+  // A mesma regra que o diagnóstico da tela e a VSL seguem. Afirmar "você perde 15 por semana"
+  // para quem respondeu "não faço ideia" queima a conversa no primeiro parágrafo.
+  const m = montarAbordagem({
+    ...LEAD_BASE,
+    respostas: { profissao: 'cabeleireiro', quantos: 'nao_sei', quemResponde: 'so_eu' },
+    vazamentos: ['cegueira', 'demora'],
+  });
+  assert.ok(!/\d+ pessoas por semana/.test(m), `inventou número: "${m}"`);
+  assert.ok(!m.includes('cerca de'), 'nenhuma faixa pode vazar para quem não deu número');
+  assert.ok(m.includes('não sabe quantos'), 'o ponto cego precisa ser o assunto de quem não tem o número');
+});
+
+teste('o ponto cego vem antes das outras dores', () => {
+  const m = montarAbordagem({ ...LEAD_BASE, vazamentos: ['cegueira', 'demora', 'sem_retomada'] });
+  assert.ok(m.includes('Antes das outras coisas'), 'a cegueira precisa abrir o parágrafo da dor');
+  assert.ok(!m.includes('tempo até a primeira resposta'), 'só a dor nº1 entra, senão a mensagem vira relatório');
+});
+
+teste('lead sem vazamento nenhum recebe texto próprio', () => {
+  const m = montarAbordagem({ ...LEAD_BASE, vazamentos: [] });
+  assert.ok(m.includes('não apareceu vazamento óbvio'), 'sem dor, a conversa é outra e o texto tem que dizer isso');
+  assert.ok(m.includes('Consegue 20 minutos'), 'o convite continua mesmo sem dor apontada');
+});
+
+teste('lead sem nome não vira "Oi, undefined"', () => {
+  const m = montarAbordagem({ ...LEAD_BASE, nome: '   ' });
+  assert.ok(m.startsWith('Oi. Aqui é o'), 'abertura quebrada quando o nome vem vazio');
+  assert.ok(!m.toLowerCase().includes('undefined'));
+});
+
+teste('a abordagem não tem travessão nem emoji', () => {
+  // Os dois vícios que o Vitor reescreve na mão toda vez. Texto gerado é por onde eles entram sem
+  // ninguém revisar, porque ninguém relê 34 ganchos depois que sobem.
+  const emoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u;
+  Object.entries(GANCHOS).forEach(([id, g]) => {
+    assert.ok(!g.includes('—') && !g.includes('–'), `o gancho de ${id} tem travessão`);
+    assert.ok(!emoji.test(g), `o gancho de ${id} tem emoji`);
+  });
+  const m = montarAbordagem(LEAD_BASE);
+  assert.ok(!m.includes('—') && !m.includes('–'), 'a mensagem montada tem travessão');
+  assert.ok(!emoji.test(m), 'a mensagem montada tem emoji');
+});
+
+teste('toda dor de todo nicho tem gancho escrito', () => {
+  // O guard que importa. Praça nova entra com dores próprias, ninguém escreve o gancho, e o lead
+  // daquele nicho passa a receber o texto de rede para sempre sem nada acusar. Varre a lista de
+  // verdade em vez de citar ids na mão, igual ao guard que já protege a VSL por profissão.
+  const semGancho = todasAsDores().filter((id) => !GANCHOS[id]);
+  assert.equal(semGancho.length, 0, `dores sem gancho: ${semGancho.join(', ')}`);
+});
+
+teste('cada dor tem um gancho próprio, não copiado de outra', () => {
+  const textos = Object.values(GANCHOS);
+  assert.equal(new Set(textos).size, textos.length, 'há gancho repetido entre dores');
+});
+
+teste('o quiz de nicho também recebe abordagem, com a dor do nicho', () => {
+  const m = montarAbordagem({
+    nome: 'Marina',
+    codigo: 'D-0309-7781',
+    respostas: { profissao: 'dentista', quemResponde: 'equipe' },
+    vazamentos: ['cadeira_vazia'],
+    nicho: 'dentista',
+  });
+  assert.ok(m.includes('falta sem aviso') || m.includes('falta deixa de ser exceção'), 'a dor do dentista não apareceu');
+  assert.ok(m.includes('equipe de três ou mais'), 'o que ele declarou sobre quem responde precisa entrar');
+});
+
 console.log('\ngravação na planilha');
 
 const CORPO = {
@@ -411,12 +530,24 @@ teste('o lead de um nicho preenche as mesmas colunas, com os ids dele', () => {
   assert.equal(l[27], 'dentista', 'AB precisa dizer qual quiz o lead respondeu');
 });
 
-teste('o respostas_json da coluna AA volta inteiro', () => {
-  const l = montarLinha({ ...CORPO, ordem: ['profissao', 'quemResponde'], nicho: 'default' }, 'x');
-  const json = JSON.parse(l[26]);
-  assert.deepEqual(json.respostas, CORPO.respostas, 'as respostas precisam sobreviver ao round-trip');
-  assert.equal(json.rotulos.profissao, 'Dentista');
-  assert.deepEqual(json.ordem, ['profissao', 'quemResponde'], 'a ordem é o que permite ler a linha depois');
+teste('a coluna AA traz a abordagem pronta, e não mais o JSON cru', () => {
+  // AA mudou de dono em 03/09. O que se ganha é a coluna servir para atender: quem abre a linha
+  // copia e manda. Se voltar a gravar JSON aqui, quem atende volta a traduzir sete colunas de
+  // cabeça, e ninguém perceberia olhando a planilha de longe.
+  const l = montarLinha({
+    ...CORPO,
+    respostas: { profissao: 'dentista', quantos: '6a15', quemResponde: 'so_eu' },
+    ordem: ['profissao', 'quemResponde'],
+    nicho: 'default',
+  }, 'x');
+  const aa = l[26];
+  assert.ok(!aa.trim().startsWith('{'), 'AA ainda está gravando JSON');
+  assert.ok(aa.includes('Ana'), 'a abordagem precisa chamar o lead pelo primeiro nome');
+  assert.ok(!aa.includes('Ana Paula'), 'só o primeiro nome, não o nome inteiro');
+  assert.ok(aa.includes('D-4821'), 'sem o código, quem atende não acha a linha de volta');
+  assert.ok(aa.includes('entre 6 e 15'), 'a faixa que o lead declarou precisa aparecer na linguagem dele');
+  assert.ok(aa.includes('primeira resposta'), 'a dor nº1 do diagnóstico precisa ser a dor citada');
+  assert.ok(aa.includes(REMETENTE), 'a mensagem precisa dizer quem está falando');
 });
 
 teste('payload sem ordem ainda grava, pelo mapeamento antigo', () => {
