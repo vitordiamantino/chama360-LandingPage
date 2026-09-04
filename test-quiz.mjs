@@ -576,6 +576,19 @@ teste('acento e pontuação sobrevivem à limpeza de texto', () => {
   assert.equal(l[1], "João D'Ávila, Jr.", 'a limpeza não pode comer acento nem pontuação');
 });
 
+teste('nome ou UTM começando com = não vira fórmula na planilha', () => {
+  // A rota é pública: um POST forjado pode mandar qualquer coisa nesses campos, sem passar pelo
+  // formulário. Sheets com USER_ENTERED roda como fórmula qualquer célula começando com = + - @.
+  const l = montarLinha({ ...CORPO, nome: '=cmd', utm: { ...CORPO.utm, utm_content: '+SUM(A1:A9)' } }, 'x');
+  assert.equal(l[1], "'=cmd", 'B (nome) precisa vir blindado com aspa simples, senão o Sheets executa como fórmula');
+  assert.equal(l[18], "'+SUM(A1:A9)", 'S (utm_content) também precisa vir blindado');
+  // AA (abordagem) não fica vulnerável hoje porque toda mensagem começa com o "Oi" fixo de
+  // montarAbordagem, nunca com o nome cru — mas ganhou a mesma blindagem em quiz.js como defesa
+  // extra: se um dia alguém reordenar os parágrafos e o nome virar a primeira coisa da mensagem,
+  // é essa blindagem que evita reabrir o buraco.
+  assert.ok(!/^[=+\-@]/.test(l[26]), 'AA nunca deveria começar com caractere de fórmula');
+});
+
 teste('WhatsApp fora do formato não vira linha silenciosa', () => {
   const l = montarLinha({ ...CORPO, whatsapp: '123' }, 'x');
   assert.equal(l[2], "'null", 'número inválido precisa ficar visível na planilha, e a rota já barra antes disso');

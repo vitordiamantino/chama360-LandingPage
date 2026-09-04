@@ -36,8 +36,17 @@ function permitir(chave, agora = Date.now(), maxPorChave = 8, maxGlobal = 120) {
   return true;
 }
 
+// Sheets interpreta USER_ENTERED começando com =, +, -, @ como fórmula. A rota é pública: um
+// POST forjado (bypassando o formulário) pode plantar fórmula em qualquer campo de texto, e ela
+// roda quando alguém abrir a planilha. Mesmo truque que o WhatsApp já usa aqui embaixo (aspa
+// simples força texto), generalizado para todo campo que passa por limparTexto.
+function protegerFormula(v) {
+  return /^[=+\-@]/.test(v) ? `'${v}` : v;
+}
+
 function limparTexto(v, max) {
-  return String(v == null ? '' : v).replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, max);
+  const limpo = String(v == null ? '' : v).replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, max);
+  return protegerFormula(limpo);
 }
 
 // Mesma regra do front, repetida aqui de propósito. O front pode ser contornado.
@@ -121,7 +130,9 @@ export function montarLinha(corpo, agoraISO) {
     // abordagem, a pedido do Vitor: JSON não se usa para atender ninguém, e as respostas seguem
     // legíveis nas colunas E a N, com a AB dizendo qual quiz foi respondido. As linhas gravadas
     // antes desta data continuam com JSON aqui.
-    montarAbordagem(corpo),                    // AA Abordagem (mensagem pronta pra mandar)
+    // montarAbordagem monta a partir do nome cru do lead e não passa por limparTexto: precisa
+    // da mesma blindagem aplicada aqui na saída, não só nos campos de entrada.
+    protegerFormula(montarAbordagem(corpo)),   // AA Abordagem (mensagem pronta pra mandar)
     limparTexto(corpo.nicho, 30),              // AB  Qual lista de perguntas o lead respondeu
   ];
 }
