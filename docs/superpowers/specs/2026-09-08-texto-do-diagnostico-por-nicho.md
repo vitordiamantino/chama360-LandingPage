@@ -141,22 +141,24 @@ Regra: toda dor de todo nicho está em exatamente uma fase. Dor sem fase quebra 
 
 ## Ponto forte (movimento entre o espelho e o plano)
 
-Só aparece se disparar. No máximo 2, nesta ordem:
+Só aparece se disparar. No máximo 2, nesta ordem. Os gatilhos vêm da pergunta 2
+(`perdeCliente`) e da pergunta 7 do quiz genérico (`ferramenta`, que os nichos não têm).
 
-- pergunta 3 = "só eu" → "Hoje é você que segura tudo. O plano não é te dar mais trabalho, é
-  tirar de você o que não precisa passar por você."
-- pergunta 3 = "eu e mais gente" → "Você já tem gente no atendimento. O que falta não é mão
-  de obra, é cada um saber de quem é a conversa."
-- pergunta 7 = "uso um CRM hoje" → "Você já usa um CRM, então a ideia de organizar isso não é
-  nova pra você. A diferença aqui é o CRM viver dentro da conversa, não numa aba separada que
+- `perdeCliente = 'nao'` ("dou conta de responder todo mundo") → "Você respondeu que dá conta
+  de responder todo mundo. Então o problema não é esforço, é o que se perde sem ninguém ver."
+- `perdeCliente = 'sem_dono'` ("somos vários e a conversa acaba sem dono") → "Você já tem
+  gente no atendimento. O que falta não é mão de obra, é cada um saber de quem é a conversa."
+- `ferramenta = 'crm_hoje'` → "Você já usa um CRM, então a ideia de organizar isso não é nova
+  pra você. A diferença aqui é o CRM viver dentro da conversa, não numa aba separada que
   ninguém abre."
-- pergunta 7 = "já testei um CRM e larguei" → "Você já testou um CRM e largou. Quase sempre
-  isso é implantação, não a ferramenta. Aqui a implantação é nossa."
-- pergunta 7 = "WhatsApp Business" → "Você já saiu do WhatsApp comum. O Business resolve
+- `ferramenta = 'crm_largado'` → "Você já testou um CRM e largou. Quase sempre isso é
+  implantação, não a ferramenta. Aqui a implantação é nossa."
+- `ferramenta = 'whats_business'` → "Você já saiu do WhatsApp comum. O Business resolve
   etiqueta e resposta rápida pra uma pessoa; ele para de dar conta quando entra a segunda
   pessoa no atendimento."
 
-Se nada disparar, o bloco não aparece.
+Se nada disparar, o bloco não aparece. Nota do gate: o `quemResponde` saiu do quiz na
+reformulação, por isso o ponto forte de "quem responde" foi refeito com o que sobrou.
 
 ---
 

@@ -12,13 +12,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   PERGUNTAS, PRIMEIRA_PERGUNTA, PROFISSOES, VAZAMENTOS, aplicarVocabulario,
-  QUIZ_POR_NICHO, resolverQuiz,
+  QUIZ_POR_NICHO, resolverQuiz, FAIXAS,
 } from './quiz-dados.js';
 import { montarLinha, abaDoNicho, cabecalhoNicho, montarLinhaNicho } from './api/quiz.js';
 import { extrairParametros, decidirAtribuicao, registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { _interno } from './quiz.js';
 import { VSL_POR_PROFISSAO, resolverVsl } from './vsl.js';
 import { montarAbordagem, GANCHOS, todasAsDores, REMETENTE } from './abordagem.js';
+import { montarPlano, _plano } from './plano.js';
 
 const TOTAL = 7;
 let ok = 0;
@@ -518,6 +519,96 @@ teste('a abordagem cita o motivo da perda, não o tamanho da equipe', () => {
   assert.ok(!/quemResponde|equipe de três/i.test(m), 'ainda fala do QUEM_RESPONDE antigo');
   assert.ok(m.includes('Ana'));
   assert.ok(m.includes('manda o orçamento'), 'o motivo da perda tem que entrar como fato');
+});
+
+console.log('\nmotor do diagnóstico (plano.js)');
+
+teste('montarPlano devolve todas as seções, com as fases fechando as dores do lead', () => {
+  const p = montarPlano({
+    nome: 'Ana Paula', codigo: 'D-0809-1234',
+    respostas: { profissao: 'dentista', perdeCliente: 'orcamento', quantos: '6a15', ferramenta: 'crm_hoje' },
+    rotulos: { perdeCliente: 'Passa orçamento, o paciente some, e ninguém retoma' },
+    vazamentos: ['orcamento_parado', 'preco_sem_conversa'],
+  });
+  assert.equal(typeof p.titulo, 'string');
+  assert.ok(Array.isArray(p.espelho) && p.espelho.length >= 2);
+  assert.ok(Array.isArray(p.dores) && p.dores.length === 2);
+  assert.ok(Array.isArray(p.fases) && p.fases.length === 3);
+  assert.ok(Array.isArray(p.evidencia) && p.evidencia.length <= 3 && p.evidencia.length >= 1);
+  assert.equal(typeof p.meta, 'string');
+  assert.equal(typeof p.call, 'string');
+  const fechadas = p.fases.flatMap((f) => f.fecha).join(' | ').toLowerCase();
+  assert.ok(fechadas.includes('orçamento'), 'a dor orcamento_parado tem que aparecer em alguma fase');
+  assert.ok(!p.espelho.join(' ').includes('{'), 'sobrou marcador cru no espelho');
+  assert.ok(!p.dores.map((d) => d.texto).join(' ').includes('{'), 'sobrou marcador cru numa dor');
+});
+
+teste('toda dor de todo nicho tem fase em plano.js', () => {
+  const todas = new Set(Object.keys(VAZAMENTOS));
+  Object.values(QUIZ_POR_NICHO).forEach((q) => Object.keys(q.dores || {}).forEach((d) => todas.add(d)));
+  todas.forEach((d) => assert.ok(_plano.FASE_DA_DOR[d], `dor "${d}" sem fase em plano.js`));
+});
+
+teste('toda dor de todo nicho tem texto de custo e desejo em plano.js', () => {
+  Object.entries(QUIZ_POR_NICHO).forEach(([nome, q]) => {
+    const chaveNicho = _plano.DOR_TEXTO[nome] ? nome : 'default';
+    Object.keys(q.dores || {}).forEach((d) => {
+      const t = _plano.DOR_TEXTO[chaveNicho][d] || _plano.DOR_TEXTO.default[d];
+      assert.ok(t && t.length > 20, `${nome}: dor "${d}" sem texto em plano.js`);
+    });
+  });
+});
+
+teste('o texto do diagnóstico não tem travessão nem emoji', () => {
+  const emoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u;
+  const varrer = (s, onde) => {
+    assert.ok(!s.includes('—') && !s.includes('–'), `travessão em ${onde}`);
+    assert.ok(!emoji.test(s), `emoji em ${onde}`);
+  };
+  Object.values(_plano.DOR_TEXTO).forEach((tab) => Object.entries(tab).forEach(([id, t]) => varrer(t, `DOR_TEXTO ${id}`)));
+  _plano.FASES.forEach((f) => { varrer(f.titulo, `fase ${f.n} título`); varrer(f.texto, `fase ${f.n} texto`); });
+  _plano.EVIDENCIA.forEach((e, i) => varrer(e.texto, `evidência ${i}`));
+  _plano.PONTO_FORTE.forEach((pf, i) => varrer(pf.texto, `ponto forte ${i}`));
+});
+
+teste('sem faixa, nem a meta nem a call inventam volume de lead', () => {
+  const p = montarPlano({
+    nome: 'Rui', codigo: 'P-1',
+    respostas: { profissao: 'personal', quantos: 'nao_sei' },
+    rotulos: { perdeCliente: 'Não sei dizer, nunca contei' },
+    vazamentos: ['cegueira'],
+  });
+  // "20 minutos", "30 dias", "90 dias" são fatos do produto, não do lead. O que não pode
+  // vazar é uma FAIXA ou um "N por semana" para quem respondeu que não sabe.
+  Object.values(FAIXAS).forEach((f) => {
+    assert.ok(!p.meta.includes(f), `a meta vazou a faixa "${f}"`);
+    assert.ok(!p.call.includes(f), `a call vazou a faixa "${f}"`);
+  });
+  assert.ok(!/\d+\s*(pessoas?\s*)?por semana/i.test(p.meta + ' ' + p.call), 'inventou volume por semana');
+});
+
+teste('com faixa, a meta e a call falam a linguagem do lead, sem número cru', () => {
+  const p = montarPlano({
+    nome: 'Rui', codigo: 'P-1',
+    respostas: { profissao: 'corretor', quantos: '16a30' },
+    rotulos: { perdeCliente: 'Outro corretor responde antes de mim' },
+    vazamentos: ['corrida_do_primeiro'],
+  });
+  assert.ok(p.meta.includes('entre 16 e 30'), 'a faixa do lead tem que entrar na meta');
+  assert.ok(p.call.includes('entre 16 e 30'), 'a urgência usa a faixa do lead');
+});
+
+teste('lead sem vazamento nenhum ainda recebe plano e call', () => {
+  const p = montarPlano({
+    nome: 'Rui', codigo: 'X-1',
+    respostas: { profissao: 'outra', perdeCliente: 'nao', quantos: 'ate5' },
+    rotulos: { perdeCliente: 'Não, dou conta de responder todo mundo' },
+    vazamentos: [],
+  });
+  assert.ok(p.titulo.includes('organizado'), 'título tem que reconhecer que está mais organizado');
+  assert.ok(p.dores.length === 1 && p.dores[0].id === 'nenhum');
+  assert.ok(p.fases.length === 3 && p.evidencia.length >= 1 && p.call.length > 20);
+  assert.ok(p.pontoForte.length >= 1, 'perdeCliente=nao dispara um ponto forte');
 });
 
 console.log('\ngravação na planilha');
