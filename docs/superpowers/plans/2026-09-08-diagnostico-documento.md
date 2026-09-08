@@ -103,17 +103,16 @@ Em `quiz-dados.js`, dentro de `PERGUNTAS`: apagar a entrada `quemResponde`. Troc
       { valor: 'sem_retoma',  label: 'A pessoa some depois do orçamento e eu não puxo', peso: ['sem_retomada'] },
       { valor: 'nao_sei',     label: 'Não sei dizer, nunca contei', peso: ['cegueira'] },
     ],
-    proxima: (r) => {
-      if (r.perdeCliente === 'sem_dono') return 'divisao';
-      if (r.perdeCliente === 'sem_retoma') return 'depoisQue';
-      return 'tempoResposta';
-    },
+    proxima: (r) => (r.perdeCliente === 'sem_dono' ? 'divisao' : 'tempoResposta'),
   },
 ```
 
-Ajustar `tempoResposta.proxima` e `divisao.proxima` se hoje elas dependiam de `quemResponde`
-(hoje não dependem, decidem por `esquecimento`/`atropelo` a partir da própria resposta).
-Conferir que `esquecimento`, `atropelo`, `depoisQue`, `quantos` seguem alcançáveis.
+Rota binária de propósito: toda árvore precisa passar por uma pergunta de numero 3
+(`tempoResposta` ou `divisao`) antes da 4, senão o lead faz 6 perguntas e a planilha
+desalinha. É a mesma forma da rota antiga (`so_eu||ninguem → tempoResposta` senão `divisao`).
+A dor `sem_retomada` continua marcada pelo `peso` da opção "some depois do orçamento" e é
+reconfirmada em `depoisQue` (numero 4). `tempoResposta.proxima` e `divisao.proxima` não
+dependiam de `quemResponde`, ficam como estão.
 
 - [ ] **Step 4: Rodar, ver passar**
 

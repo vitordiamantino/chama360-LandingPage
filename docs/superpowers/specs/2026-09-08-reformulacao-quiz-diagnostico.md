@@ -57,14 +57,16 @@ escolhe o caminho. Fica mais assertiva do que perguntar o tamanho da equipe, e m
 
 | resposta | marca a dor | leva para |
 |---|---|---|
-| Não, dou conta de responder todo mundo | | `depoisQue` |
+| Não, dou conta de responder todo mundo | | `tempoResposta` |
 | Demoro pra responder e a pessoa já foi | `demora` | `tempoResposta` |
 | Somos vários e a conversa acaba sem dono | `sem_dono` | `divisao` |
-| A pessoa some depois do orçamento e eu não puxo | `sem_retomada` | `depoisQue` |
+| A pessoa some depois do orçamento e eu não puxo | `sem_retomada` | `tempoResposta` |
 | Não sei dizer, nunca contei | `cegueira` | `tempoResposta` |
 
-Cinco respostas, no limite. Quem responde "não sei dizer" cai no caminho de tempo, que é o
-mais comum, e a cegueira dele é confirmada mais adiante na pergunta 6.
+Cinco respostas, no limite. A rota é binária: só "somos vários" vai para `divisao`, o resto
+vai para `tempoResposta`. Toda árvore precisa passar por uma pergunta de numero 3 antes da 4,
+senão o lead faz 6 perguntas e a planilha desalinha. A dor `sem_retomada` marcada aqui é
+reconfirmada em `depoisQue` (numero 4); a cegueira, na pergunta 6.
 
 **3A. tempoResposta** (caminho tempo)
 

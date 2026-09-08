@@ -65,22 +65,25 @@ export const PERGUNTAS = {
     // `rotulo` é o que vai para a planilha. Sem separar os dois, a coluna Profissão passaria a
     // gravar "Veterinário" onde o histórico tem "Veterinário ou Clínica Veterinária".
     opcoes: PROFISSOES.map((p) => ({ valor: p.id, label: p.curto || p.label, rotulo: p.label })),
-    proxima: () => 'quemResponde',
+    proxima: () => 'perdeCliente',
   },
 
-  quemResponde: {
-    id: 'quemResponde',
+  perdeCliente: {
+    id: 'perdeCliente',
     numero: 2,
-    texto: 'Quem responde o WhatsApp do seu negócio hoje?',
+    texto: 'Você perde {cliente} no WhatsApp sem nem perceber?',
     opcoes: [
-      { valor: 'so_eu',    label: 'Só eu' },
-      { valor: 'mais_um',  label: 'Eu e mais uma pessoa' },
-      { valor: 'equipe',   label: 'Uma equipe, três ou mais' },
-      { valor: 'ninguem',  label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['demora'] },
+      { valor: 'nao',        label: 'Não, dou conta de responder todo mundo' },
+      { valor: 'demora',     label: 'Demoro pra responder e a pessoa já foi',         peso: ['demora'] },
+      { valor: 'sem_dono',   label: 'Somos vários e a conversa acaba sem dono',        peso: ['sem_dono'] },
+      { valor: 'sem_retoma', label: 'A pessoa some depois do orçamento e eu não puxo', peso: ['sem_retomada'] },
+      { valor: 'nao_sei',    label: 'Não sei dizer, nunca contei',                     peso: ['cegueira'] },
     ],
-    // Quem atende sozinho tem um problema de tempo. Quem atende em grupo tem um problema de
-    // dono. São perguntas diferentes porque são doenças diferentes.
-    proxima: (r) => (r.quemResponde === 'so_eu' || r.quemResponde === 'ninguem' ? 'tempoResposta' : 'divisao'),
+    // Rota binária: só "somos vários" tem problema de dono e vai para `divisao`; o resto vai
+    // para `tempoResposta`. Toda árvore precisa passar por uma pergunta de numero 3 antes da 4,
+    // senão o lead faz 6 perguntas e a planilha desalinha. `sem_retomada` marcado aqui é
+    // reconfirmado em `depoisQue` (numero 4); a cegueira, na pergunta 6.
+    proxima: (r) => (r.perdeCliente === 'sem_dono' ? 'divisao' : 'tempoResposta'),
   },
 
   tempoResposta: {
@@ -464,13 +467,14 @@ export const QUIZ_POR_NICHO = {
     total: 7,
     perguntas: listaLinear([
       {
-        id: 'quemResponde',
-        texto: 'Quem responde o WhatsApp do seu negócio hoje?',
+        id: 'perdeCliente',
+        texto: 'Você perde aluno no WhatsApp antes de fechar o plano?',
         opcoes: [
-          { valor: 'so_eu',   label: 'Só eu' },
-          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
-          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
-          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['timing_direct'] },
+          { valor: 'nao',       label: 'Não, dou conta de responder todo mundo' },
+          { valor: 'demora',    label: 'Demoro pra responder e ele já fechou com outro', peso: ['timing_direct'] },
+          { valor: 'sem_funil', label: 'Fica tudo junto e eu perco o fio de quem tava quente', peso: ['sem_funil'] },
+          { valor: 'sumiu',     label: 'Pergunta o valor, some, e eu não puxo de volta', peso: ['plano_sem_fechar'] },
+          { valor: 'nao_sei',   label: 'Não sei dizer, nunca contei', peso: ['cegueira'] },
         ],
       },
       {
@@ -533,13 +537,14 @@ export const QUIZ_POR_NICHO = {
     total: 7,
     perguntas: listaLinear([
       {
-        id: 'quemResponde',
-        texto: 'Quem responde o WhatsApp dos seus leads hoje?',
+        id: 'perdeCliente',
+        texto: 'Você perde lead no WhatsApp sem nem perceber?',
         opcoes: [
-          { valor: 'so_eu',   label: 'Só eu' },
-          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
-          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
-          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['corrida_do_primeiro'] },
+          { valor: 'nao',         label: 'Não, respondo todos rápido' },
+          { valor: 'outro_antes', label: 'Outro corretor responde antes de mim', peso: ['corrida_do_primeiro'] },
+          { valor: 'curioso',     label: 'Atendo o curioso e deixo o comprador esperando', peso: ['lead_sem_triagem'] },
+          { valor: 'sumiu',       label: 'Não gostou do imóvel, sumiu, e eu não puxo', peso: ['imovel_errado_fim'] },
+          { valor: 'nao_sei',     label: 'Não sei dizer', peso: ['cegueira'] },
         ],
       },
       {
@@ -601,13 +606,14 @@ export const QUIZ_POR_NICHO = {
     total: 7,
     perguntas: listaLinear([
       {
-        id: 'quemResponde',
-        texto: 'Quem responde o WhatsApp da clínica hoje?',
+        id: 'perdeCliente',
+        texto: 'Você perde paciente no WhatsApp sem nem perceber?',
         opcoes: [
-          { valor: 'so_eu',   label: 'Só eu' },
-          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
-          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
-          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['recepcao_afogada'] },
+          { valor: 'nao',       label: 'Não, a recepção dá conta' },
+          { valor: 'afogada',   label: 'A recepção não dá conta e o WhatsApp fica esperando', peso: ['recepcao_afogada'] },
+          { valor: 'orcamento', label: 'Passa orçamento, o paciente some, e ninguém retoma', peso: ['orcamento_parado'] },
+          { valor: 'so_preco',  label: 'Respondem só com o valor e o paciente vai comparar preço', peso: ['preco_sem_conversa'] },
+          { valor: 'nao_sei',   label: 'Não sei dizer', peso: ['cegueira'] },
         ],
       },
       {
@@ -673,13 +679,14 @@ export const QUIZ_POR_NICHO = {
     total: 7,
     perguntas: listaLinear([
       {
-        id: 'quemResponde',
-        texto: 'Quem responde o WhatsApp da corretora hoje?',
+        id: 'perdeCliente',
+        texto: 'Você perde cliente no WhatsApp sem nem perceber?',
         opcoes: [
-          { valor: 'so_eu',   label: 'Só eu' },
-          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
-          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
-          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['cotacao_parada'] },
+          { valor: 'nao',       label: 'Não, dou conta de responder todo mundo' },
+          { valor: 'renovacao', label: 'A apólice vence e o cliente renova com outro', peso: ['renovacao_perdida'] },
+          { valor: 'cotacao',   label: 'Mando a cotação, o cliente some, e eu não retomo', peso: ['cotacao_parada'] },
+          { valor: 'sinistro',  label: 'Demoro no sinistro e o cliente fica magoado', peso: ['sinistro_lento'] },
+          { valor: 'nao_sei',   label: 'Não sei dizer', peso: ['cegueira'] },
         ],
       },
       {
@@ -742,13 +749,14 @@ export const QUIZ_POR_NICHO = {
     total: 7,
     perguntas: listaLinear([
       {
-        id: 'quemResponde',
-        texto: 'Quem responde o WhatsApp da clínica hoje?',
+        id: 'perdeCliente',
+        texto: 'Você perde tutor no WhatsApp sem nem perceber?',
         opcoes: [
-          { valor: 'so_eu',   label: 'Só eu' },
-          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
-          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
-          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['emergencia_sem_resposta'] },
+          { valor: 'nao',       label: 'Não, a gente dá conta de responder todo mundo' },
+          { valor: 'urgencia',  label: 'Urgência fora do horário fica sem resposta', peso: ['emergencia_sem_resposta'] },
+          { valor: 'vacina',    label: 'O retorno da vacina não é chamado e o tutor some', peso: ['retorno_vacina'] },
+          { valor: 'orcamento', label: 'Passa o valor do exame, o tutor some, e ninguém retoma', peso: ['orcamento_exame'] },
+          { valor: 'nao_sei',   label: 'Não sei dizer', peso: ['cegueira'] },
         ],
       },
       {
@@ -810,13 +818,14 @@ export const QUIZ_POR_NICHO = {
     total: 7,
     perguntas: listaLinear([
       {
-        id: 'quemResponde',
-        texto: 'Quem responde o WhatsApp da oficina hoje?',
+        id: 'perdeCliente',
+        texto: 'Você perde cliente no WhatsApp sem nem perceber?',
         opcoes: [
-          { valor: 'so_eu',   label: 'Só eu' },
-          { valor: 'mais_um', label: 'Eu e mais uma pessoa' },
-          { valor: 'equipe',  label: 'Uma equipe, três ou mais' },
-          { valor: 'ninguem', label: 'Na prática ninguém dá conta, fica muita coisa sem resposta', peso: ['orcamento_sem_resposta'] },
+          { valor: 'nao',       label: 'Não, dou conta de responder todo mundo' },
+          { valor: 'orcamento', label: 'Mando o orçamento, o cliente some, e o carro trava o box', peso: ['orcamento_sem_resposta', 'box_travado'] },
+          { valor: 'aprovacao', label: 'Peço aprovação de um extra e a resposta some no meio da conversa', peso: ['aprovacao_demorada'] },
+          { valor: 'revisao',   label: 'Consertei e nunca mais chamei pra próxima revisão', peso: ['revisao_esquecida'] },
+          { valor: 'nao_sei',   label: 'Não sei dizer', peso: ['cegueira'] },
         ],
       },
       {

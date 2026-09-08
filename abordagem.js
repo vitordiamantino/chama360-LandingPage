@@ -26,13 +26,28 @@ import { VAZAMENTOS, QUIZ_POR_NICHO, FAIXAS, aplicarVocabulario } from './quiz-d
 // Quem assina a mensagem. Um lugar só: trocar aqui troca em todo lead novo.
 export const REMETENTE = 'Vitor';
 
-// Como o lead descreveu quem responde o WhatsApp hoje. É a única pergunta que existe em TODOS os
-// quizzes, genérico e de nicho, então é o fato que a abertura sempre consegue citar.
-const QUEM_RESPONDE = {
-  so_eu:   'hoje é só você respondendo o WhatsApp',
-  mais_um: 'hoje são você e mais uma pessoa no WhatsApp',
-  equipe:  'hoje tem uma equipe de três ou mais respondendo',
-  ninguem: 'hoje não tem quem dê conta, e muita coisa fica sem resposta',
+// O motivo da perda que o lead marcou na pergunta 2, na frase que a abertura consegue citar.
+// Substitui o antigo QUEM_RESPONDE: a pergunta 2 virou "você perde {cliente}?" e cada nicho tem
+// seus próprios valores, então o mapa cobre todos. `nao` e `nao_sei` não entram (um não é dor, o
+// outro já é assunto do parágrafo de cegueira). Valor sem entrada aqui simplesmente não vira fato.
+const PERDE_CLIENTE = {
+  demora:      'demora pra responder e a pessoa já foi quando você volta',
+  sem_dono:    'são vários respondendo e a conversa acaba sem dono',
+  sem_retoma:  'a pessoa some depois do orçamento e ninguém puxa de volta',
+  sem_funil:   'fica tudo junto e você perde o fio de quem estava quente',
+  sumiu:       'quem pergunta o valor some, e ninguém puxa de volta',
+  outro_antes: 'outro corretor costuma responder o lead antes de você',
+  curioso:     'o curioso toma o seu tempo e o comprador fica esperando',
+  afogada:     'a recepção não dá conta e o WhatsApp fica sempre esperando',
+  orcamento:   'manda o orçamento, a pessoa some, e ninguém retoma',
+  so_preco:    'respondem só com o valor e a pessoa vai comparar preço',
+  renovacao:   'a apólice vence e o cliente renova com outro',
+  cotacao:     'manda a cotação, o cliente some, e ninguém retoma',
+  sinistro:    'a demora no sinistro deixa o cliente magoado',
+  urgencia:    'urgência fora do horário fica sem resposta',
+  vacina:      'o retorno da vacina não é chamado e o tutor some',
+  aprovacao:   'a aprovação de um serviço extra some no meio da conversa',
+  revisao:     'consertou e nunca mais chamou pra próxima revisão',
 };
 
 // Um parágrafo por dor, com os mesmos marcadores do quiz ({cliente}, {plural}, {espera},
@@ -136,8 +151,8 @@ export function montarAbordagem(corpo) {
   const fatos = [];
   const faixa = FAIXAS[r.quantos];
   if (faixa) fatos.push(`${faixa} te procuram e não fecham`);
-  const quem = QUEM_RESPONDE[r.quemResponde];
-  if (quem) fatos.push(quem);
+  const perda = PERDE_CLIENTE[r.perdeCliente];
+  if (perda) fatos.push(perda);
 
   const codigo = String(c.codigo || '').trim();
   let contexto = codigo ? `Vi teu diagnóstico aqui, código ${codigo}.` : 'Vi teu diagnóstico aqui.';

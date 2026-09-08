@@ -98,7 +98,7 @@ export function montarLinha(corpo, agoraISO) {
     `'${normalizarWhatsapp(corpo.whatsapp)}`,  // C  WhatsApp (aspa simples para o Sheets não comer o zero)
     limparTexto(corpo.codigo, 12),             // D  Código do diagnóstico
     limparTexto(rot.profissao, 60),            // E  P1 Profissão
-    pos(1, 'quemResponde'),                    // F  P2 resposta
+    pos(1, 'perdeCliente', 'quemResponde'),    // F  P2 resposta (perdeCliente novo, quemResponde no payload antigo)
     pos(2, 'tempoResposta', 'divisao'),        // G  P3 resposta
     v[3] || '',                                // H  P3 variante
     pos(3, 'esquecimento', 'atropelo', 'depoisQue'), // I  P4 resposta

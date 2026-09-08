@@ -80,7 +80,7 @@ await responder(page, 'Dentista');
 conferir((await textoDe(page, '#quiz-passo')).includes('2 de 7'), 'avança para a pergunta 2');
 conferir(!(await page.locator('#quiz-voltar').isHidden()), 'o botão voltar aparece a partir da pergunta 2');
 
-await responder(page, 'Só eu');
+await responder(page, 'A recepção não dá conta');
 const p3 = await textoDe(page, '#quiz-pergunta');
 conferir((await textoDe(page, '#quiz-passo')).includes('3 de 7'), 'chega na pergunta 3');
 conferir(p3.includes('orçamento') || p3.includes('quanto tempo'), `a pergunta 3 usa o vocabulário do dentista: "${p3}"`);
@@ -92,7 +92,7 @@ await page.locator('#quiz-voltar').click();
 await page.waitForTimeout(150);
 conferir((await textoDe(page, '#quiz-passo')).includes('2 de 7'), 'voltar leva de fato para a pergunta anterior');
 conferir(await page.locator('#quiz-avancar').isDisabled(), 'ao voltar, continuar volta a ficar desabilitado');
-await responder(page, 'Só eu');
+await responder(page, 'A recepção não dá conta');
 
 // Daqui em diante o dentista percorre o quiz PRÓPRIO dele, do W2: nenhuma dessas perguntas
 // existe no quiz genérico. Se o motor tivesse caído no default, nenhum destes textos apareceria.
@@ -275,7 +275,7 @@ console.log('\nquiz embutido no institucional');
   // cair no quiz GENÉRICO, com a ramificação de sempre. Se um dia alguém der lista própria a ele
   // sem querer, é aqui que aparece.
   await responder(p, 'Advogado');
-  await responder(p, 'Eu e mais uma pessoa');
+  await responder(p, 'Somos vários e a conversa acaba sem dono');
   const p3adv = await textoDe(p, '#quiz-pergunta');
   conferir(p3adv.includes('dividem'), `nicho de camada 2 cai no quiz genérico: "${p3adv}"`);
   await responder(p, 'Tem uma divisão combinada');

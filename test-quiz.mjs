@@ -91,6 +91,26 @@ teste('toda pergunta com variante declara a letra, e o número casa', () => {
   });
 });
 
+teste('a pergunta 2 é perdeCliente, roteia binário e não deixa dor cair', () => {
+  assert.equal(PERGUNTAS.quemResponde, undefined, 'quemResponde deveria ter saído do genérico');
+  const p = PERGUNTAS.perdeCliente;
+  assert.ok(p, 'perdeCliente não existe');
+  assert.equal(p.numero, 2);
+  assert.equal(PERGUNTAS.profissao.proxima(), 'perdeCliente');
+  assert.ok(p.opcoes.length >= 3 && p.opcoes.length <= 5, 'de 3 a 5 respostas');
+  assert.ok(!p.variante, 'a pergunta 2 não ramifica por número, não leva variante');
+  for (const o of p.opcoes) {
+    const destino = p.proxima({ perdeCliente: o.valor });
+    assert.ok(['tempoResposta', 'divisao'].includes(destino), `perdeCliente -> ${o.valor} deve cair numa pergunta de numero 3, caiu em ${destino}`);
+  }
+  // as dores que o genérico promete continuam alcançáveis por alguma resposta de alguma pergunta
+  const marcadas = new Set();
+  Object.values(PERGUNTAS).forEach((q) => q.opcoes.forEach((o) => (o.peso || []).forEach((w) => marcadas.add(w))));
+  for (const d of QUIZ_POR_NICHO.default.ordemDores) {
+    assert.ok(marcadas.has(d), `a dor "${d}" do genérico ficou sem nenhuma resposta que a marque`);
+  }
+});
+
 console.log('\nvocabulário e diagnóstico');
 
 teste('nenhum placeholder sobra sem tradução, em nenhuma das profissões da lista', () => {
@@ -225,6 +245,34 @@ teste('a ordem de exibição cobre exatamente as dores do nicho, com cegueira na
     assert.equal(quiz.ordemDores[0], 'cegueira',
       `${nicho}: a cegueira precisa vir primeiro — não adianta falar de vazamento com quem não mede nenhum`);
   });
+});
+
+teste('cada nicho troca quemResponde por perdeCliente, mantendo 7 e as dores', () => {
+  NICHOS_PROPRIOS.forEach((nicho) => {
+    const quiz = QUIZ_POR_NICHO[nicho];
+    const ids = Object.keys(quiz.perguntas);
+    assert.ok(!ids.includes('quemResponde'), `${nicho} ainda tem quemResponde`);
+    assert.ok(ids.includes('perdeCliente'), `${nicho} não tem perdeCliente`);
+    assert.equal(quiz.total, 7);
+    Object.values(quiz.perguntas).forEach((p) => {
+      assert.ok(p.opcoes.length <= 5, `${nicho}/${p.id} tem mais de 5 respostas`);
+    });
+    // toda dor do nicho segue alcançável por alguma resposta (o guard antigo já cobre, aqui é explícito pós-troca)
+    const marcadas = new Set();
+    Object.values(quiz.perguntas).forEach((p) => p.opcoes.forEach((o) => (o.peso || []).forEach((w) => marcadas.add(w))));
+    Object.keys(quiz.dores).forEach((d) => {
+      assert.ok(marcadas.has(d), `${nicho}: a dor "${d}" ficou sem resposta que a marque`);
+    });
+  });
+});
+
+teste('nenhuma pergunta passa de 5 respostas, exceto a profissão', () => {
+  const checar = (p) => {
+    if (p.id === 'profissao') return;
+    assert.ok(p.opcoes.length <= 5, `pergunta ${p.id} tem ${p.opcoes.length} respostas, o teto é 5`);
+  };
+  Object.values(PERGUNTAS).forEach(checar);
+  NICHOS_PROPRIOS.forEach((nicho) => Object.values(QUIZ_POR_NICHO[nicho].perguntas).forEach(checar));
 });
 
 teste('nicho de camada 2 e profissão desconhecida caem no genérico', () => {
@@ -381,7 +429,7 @@ console.log('\nabordagem escrita na planilha');
 const LEAD_BASE = {
   nome: 'Márcia Souza',
   codigo: 'C-0309-4721',
-  respostas: { profissao: 'cabeleireiro', quantos: '6a15', quemResponde: 'so_eu' },
+  respostas: { profissao: 'cabeleireiro', quantos: '6a15', perdeCliente: 'demora' },
   vazamentos: ['demora', 'sem_retomada'],
   nicho: 'default',
 };
@@ -397,7 +445,7 @@ teste('quem não sabe quantos escapam não recebe número inventado', () => {
   // para quem respondeu "não faço ideia" queima a conversa no primeiro parágrafo.
   const m = montarAbordagem({
     ...LEAD_BASE,
-    respostas: { profissao: 'cabeleireiro', quantos: 'nao_sei', quemResponde: 'so_eu' },
+    respostas: { profissao: 'cabeleireiro', quantos: 'nao_sei', perdeCliente: 'demora' },
     vazamentos: ['cegueira', 'demora'],
   });
   assert.ok(!/\d+ pessoas por semana/.test(m), `inventou número: "${m}"`);
@@ -453,12 +501,23 @@ teste('o quiz de nicho também recebe abordagem, com a dor do nicho', () => {
   const m = montarAbordagem({
     nome: 'Marina',
     codigo: 'D-0309-7781',
-    respostas: { profissao: 'dentista', quemResponde: 'equipe' },
+    respostas: { profissao: 'dentista', perdeCliente: 'afogada' },
     vazamentos: ['cadeira_vazia'],
     nicho: 'dentista',
   });
   assert.ok(m.includes('falta sem aviso') || m.includes('falta deixa de ser exceção'), 'a dor do dentista não apareceu');
-  assert.ok(m.includes('equipe de três ou mais'), 'o que ele declarou sobre quem responde precisa entrar');
+  assert.ok(m.includes('recepção não dá conta'), 'o motivo da perda que ele marcou precisa entrar');
+});
+
+teste('a abordagem cita o motivo da perda, não o tamanho da equipe', () => {
+  const m = montarAbordagem({
+    nome: 'Ana', codigo: 'C-0809-1234',
+    respostas: { profissao: 'dentista', perdeCliente: 'orcamento', quantos: '6a15' },
+    vazamentos: ['orcamento_parado'], nicho: 'dentista',
+  });
+  assert.ok(!/quemResponde|equipe de três/i.test(m), 'ainda fala do QUEM_RESPONDE antigo');
+  assert.ok(m.includes('Ana'));
+  assert.ok(m.includes('manda o orçamento'), 'o motivo da perda tem que entrar como fato');
 });
 
 console.log('\ngravação na planilha');
@@ -507,21 +566,21 @@ teste('o lead de um nicho preenche as mesmas colunas, com os ids dele', () => {
     respostas: { profissao: 'dentista', faltas: 'bastante' },
     rotulos: {
       profissao: 'Dentista',
-      quemResponde: 'Eu e mais uma pessoa',
+      perdeCliente: 'Passa orçamento, o paciente some, e ninguém retoma',
       quemOrcamento: 'A recepção responde quando dá uma brecha',
       comoPassaValor: 'Mando o valor pelo WhatsApp mesmo',
       orcamentoParado: 'Fica por isso mesmo',
       faltas: 'Bastante, é o meu maior problema',
       manutencao: 'Só se ele procurar',
     },
-    ordem: ['profissao', 'quemResponde', 'quemOrcamento', 'comoPassaValor', 'orcamentoParado', 'faltas', 'manutencao'],
+    ordem: ['profissao', 'perdeCliente', 'quemOrcamento', 'comoPassaValor', 'orcamentoParado', 'faltas', 'manutencao'],
     nicho: 'dentista',
     variantes: {},
   };
   const l = montarLinha(corpoNicho, 'x');
   assert.equal(l.length, 28);
   assert.equal(l[4], 'Dentista', 'E continua sendo a profissão');
-  assert.equal(l[5], 'Eu e mais uma pessoa', 'F continua sendo a P2');
+  assert.equal(l[5], 'Passa orçamento, o paciente some, e ninguém retoma', 'F continua sendo a P2');
   assert.equal(l[6], 'A recepção responde quando dá uma brecha', 'G precisa trazer a P3 do dentista');
   assert.equal(l[8], 'Mando o valor pelo WhatsApp mesmo', 'I precisa trazer a P4 do dentista');
   assert.equal(l[10], 'Fica por isso mesmo', 'K precisa trazer a P5 do dentista');
@@ -536,8 +595,8 @@ teste('a coluna AA traz a abordagem pronta, e não mais o JSON cru', () => {
   // cabeça, e ninguém perceberia olhando a planilha de longe.
   const l = montarLinha({
     ...CORPO,
-    respostas: { profissao: 'dentista', quantos: '6a15', quemResponde: 'so_eu' },
-    ordem: ['profissao', 'quemResponde'],
+    respostas: { profissao: 'dentista', quantos: '6a15', perdeCliente: 'demora' },
+    ordem: ['profissao', 'perdeCliente'],
     nicho: 'default',
   }, 'x');
   const aa = l[26];
