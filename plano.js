@@ -15,7 +15,7 @@
 //
 // Tom: o do Vitor no WhatsApp. SEM TRAVESSÃO E SEM EMOJI, e há teste guardando isso.
 
-import { VAZAMENTOS, FAIXAS, aplicarVocabulario, acharProfissao, resolverQuiz } from './quiz-dados.js';
+import { VAZAMENTOS, FAIXAS, aplicarVocabulario, acharProfissao, resolverQuiz, calcularVazamentos } from './quiz-dados.js';
 
 // ------------------------------------------------------------------------------------------
 // Movimento 4 — as 3 fases do plano de 90 dias. `FASE_DA_DOR` liga cada dor a uma fase; o
@@ -192,7 +192,10 @@ export function montarPlano(corpo) {
 
   const quiz = resolverQuiz(prof);
   const ordem = quiz.ordemDores || Object.keys(VAZAMENTOS);
-  const vazamentos = (Array.isArray(c.vazamentos) ? c.vazamentos : [])
+  // A tela manda `vazamentos` pronto; o /relatorio abre só com as respostas (a lista não cabe
+  // no fragmento) e recalcula pela mesma fonte que a tela usou.
+  const brutos = Array.isArray(c.vazamentos) ? c.vazamentos : calcularVazamentos(r, prof);
+  const vazamentos = brutos
     .filter((k) => ordem.includes(k))
     .sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
 
@@ -258,11 +261,16 @@ export function montarPlano(corpo) {
   let call = 'Numa conversa de 20 minutos a gente abre a CHAMA com o seu caso na tela e monta esse plano de 90 dias com você. É conversa, não demonstração empurrada. Sem compromisso, e quem fecha tem 30 dias de garantia.';
   if (faixa) call += ` Cada semana assim são ${faixa} que não voltam.`;
 
+  const iso = c.data || new Date().toISOString();
+  let databr = iso;
+  try { databr = new Date(iso).toLocaleDateString('pt-BR'); } catch (e) { /* mantém o iso */ }
+
   return {
     titulo: tituloDoDiagnostico(vazamentos),
     profissao: p.label,
     codigo: c.codigo || '',
     nome: c.nome || '',
+    databr,
     espelho,
     pontoForte,
     dores,

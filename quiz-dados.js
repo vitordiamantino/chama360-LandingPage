@@ -887,3 +887,21 @@ export const QUIZ_POR_NICHO = {
 export function resolverQuiz(profissaoId) {
   return QUIZ_POR_NICHO[profissaoId] || QUIZ_POR_NICHO.default;
 }
+
+// Percorre as respostas, junta os `peso` das opções escolhidas e devolve os vazamentos
+// marcados na ordem de `ordemDores` do nicho. Fonte única: o quiz.js chama na tela (com o
+// estado do lead), o plano.js chama quando o /relatorio abre por link e só tem as respostas.
+// A pergunta de um nicho pode não existir na lista dele (quem volta da 2 para a 1), então a
+// busca cai no genérico, igual ao acharPergunta do quiz.js.
+export function calcularVazamentos(respostas, profissaoId) {
+  const r = respostas || {};
+  const quiz = resolverQuiz(profissaoId);
+  const marcados = new Set();
+  Object.keys(r).forEach((idPergunta) => {
+    const p = quiz.perguntas[idPergunta] || QUIZ_POR_NICHO.default.perguntas[idPergunta];
+    if (!p || !p.opcoes) return;
+    const escolhida = p.opcoes.find((o) => o.valor === r[idPergunta]);
+    if (escolhida && escolhida.peso) escolhida.peso.forEach((w) => marcados.add(w));
+  });
+  return (quiz.ordemDores || Object.keys(VAZAMENTOS)).filter((k) => marcados.has(k));
+}

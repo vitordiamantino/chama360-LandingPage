@@ -5,7 +5,7 @@
 
 import {
   PRIMEIRA_PERGUNTA, FAIXAS,
-  acharProfissao, aplicarVocabulario, resolverQuiz, QUIZ_POR_NICHO,
+  acharProfissao, aplicarVocabulario, resolverQuiz, QUIZ_POR_NICHO, calcularVazamentos,
 } from './quiz-dados.js';
 import { registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { montarVsl } from './vsl.js';
@@ -189,19 +189,10 @@ function normalizarWhatsapp(bruto) {
   return `55${sem55}`;
 }
 
+// Delega para a fonte única em quiz-dados.js. A cegueira já vem primeiro de lá (é a ordem de
+// `ordemDores`): não adianta falar de vazamento com quem não consegue medir nenhum.
 function calcularDiagnostico() {
-  const marcados = new Set();
-  Object.keys(estado.respostas).forEach((idPergunta) => {
-    const p = acharPergunta(idPergunta);
-    if (!p) return;
-    const escolhida = p.opcoes.find((o) => o.valor === estado.respostas[idPergunta]);
-    (escolhida && escolhida.peso ? escolhida.peso : []).forEach((w) => marcados.add(w));
-  });
-
-  // A cegueira vem primeiro quando existe: não adianta falar de vazamento com quem não
-  // consegue medir nenhum.
-  const ordem = quizAtual().ordemDores;
-  return ordem.filter((k) => marcados.has(k));
+  return calcularVazamentos(estado.respostas, estado.respostas.profissao);
 }
 
 function renderDiagnostico() {

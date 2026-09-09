@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   PERGUNTAS, PRIMEIRA_PERGUNTA, PROFISSOES, VAZAMENTOS, aplicarVocabulario,
-  QUIZ_POR_NICHO, resolverQuiz, FAIXAS,
+  QUIZ_POR_NICHO, resolverQuiz, FAIXAS, calcularVazamentos,
 } from './quiz-dados.js';
 import { montarLinha, abaDoNicho, cabecalhoNicho, montarLinhaNicho } from './api/quiz.js';
 import { extrairParametros, decidirAtribuicao, registrarVisita, lerAtribuicao } from './atribuicao.js';
@@ -20,6 +20,7 @@ import { _interno } from './quiz.js';
 import { VSL_POR_PROFISSAO, resolverVsl } from './vsl.js';
 import { montarAbordagem, GANCHOS, todasAsDores, REMETENTE } from './abordagem.js';
 import { montarPlano, _plano } from './plano.js';
+import { htmlDoDiagnostico, empacotar, desempacotar } from './relatorio.js';
 
 const TOTAL = 7;
 let ok = 0;
@@ -609,6 +610,78 @@ teste('lead sem vazamento nenhum ainda recebe plano e call', () => {
   assert.ok(p.dores.length === 1 && p.dores[0].id === 'nenhum');
   assert.ok(p.fases.length === 3 && p.evidencia.length >= 1 && p.call.length > 20);
   assert.ok(p.pontoForte.length >= 1, 'perdeCliente=nao dispara um ponto forte');
+});
+
+console.log('\nrenderizador do documento (relatorio.js)');
+
+teste('htmlDoDiagnostico traz as seções e escapa o nome do lead', () => {
+  const plano = montarPlano({
+    nome: 'Ana <b>x</b>', codigo: 'D-1',
+    respostas: { profissao: 'dentista', perdeCliente: 'orcamento', quantos: '6a15' },
+    rotulos: { perdeCliente: 'Passa orçamento, o paciente some, e ninguém retoma' },
+    vazamentos: ['orcamento_parado'],
+  });
+  const html = htmlDoDiagnostico(plano);
+  assert.ok(html.includes('Diagnóstico do seu atendimento'), 'sem cabeçalho');
+  assert.ok(html.includes('Onde vaza cliente'), 'sem a seção de dores');
+  assert.ok(html.includes('Dias 1 a 30'), 'sem o plano de 90 dias');
+  assert.ok(html.includes('O próximo passo'), 'sem o bloco da call');
+  assert.ok(!html.includes('<b>x</b>'), 'não escapou o nome do lead');
+  assert.ok(!html.includes('{cliente}') && !html.includes('{plural}'), 'sobrou marcador cru no HTML');
+});
+
+teste('htmlDoDiagnostico só liga os botões quando recebe os hrefs', () => {
+  const plano = montarPlano({
+    nome: 'Rui', codigo: 'C-1',
+    respostas: { profissao: 'corretor', perdeCliente: 'nao', quantos: 'ate5' },
+    rotulos: { perdeCliente: 'Não, respondo todos rápido' },
+    vazamentos: [],
+  });
+  assert.ok(!htmlDoDiagnostico(plano).includes('data-whatsapp'), 'botão do WhatsApp apareceu sem href');
+  const comLinks = htmlDoDiagnostico(plano, { whatsappHref: 'https://wa.me/551199?text=oi', pdfHref: 'https://chama360.com.br/relatorio#d=abc' });
+  assert.ok(comLinks.includes('href="https://wa.me/551199?text=oi"'), 'href do WhatsApp não entrou');
+  assert.ok(comLinks.includes('relatorio#d=abc'), 'link do PDF não entrou');
+});
+
+teste('empacotar/desempacotar preserva o caso do lead e ignora o resto', () => {
+  const dados = {
+    profissao: 'corretor',
+    respostas: { profissao: 'corretor', perdeCliente: 'outro_antes', quantos: '6a15' },
+    rotulos: { profissao: 'Corretor de Imóveis', perdeCliente: 'Outro corretor responde antes de mim' },
+    nome: 'João', codigo: 'C-0809-9999', data: '2026-09-09T12:00:00.000Z',
+    whatsapp: '5511999999999', // não é campo do fragmento, tem que sumir
+  };
+  const frag = empacotar(dados);
+  assert.ok(typeof frag === 'string' && frag.length < 1500, 'fragmento longo demais');
+  assert.ok(!/[+/=]/.test(frag), 'fragmento tem que ser base64url, sem +/=');
+  const volta = desempacotar('#d=' + frag);
+  assert.equal(volta.nome, 'João');
+  assert.equal(volta.codigo, 'C-0809-9999');
+  assert.deepEqual(volta.respostas, dados.respostas);
+  assert.equal(volta.whatsapp, undefined, 'o WhatsApp não pode ir no fragmento');
+});
+
+teste('desempacotar aguenta lixo sem quebrar', () => {
+  assert.equal(desempacotar('#d=@@@'), null);
+  assert.equal(desempacotar(''), null);
+  assert.equal(desempacotar('#d='), null);
+  assert.equal(desempacotar(null), null);
+});
+
+teste('o /relatorio re-deriva o mesmo documento que a tela mostrou', () => {
+  // A tela monta com `vazamentos` pronto (calcularDiagnostico do quiz.js). O /relatorio abre
+  // só com o fragmento, que NÃO carrega vazamentos, e montarPlano recalcula das respostas.
+  // Os dois HTML têm que bater byte a byte.
+  const corpo = {
+    profissao: 'dentista',
+    respostas: { profissao: 'dentista', perdeCliente: 'orcamento', quantos: '6a15', ferramenta: 'crm_largado' },
+    rotulos: { perdeCliente: 'Passa orçamento, o paciente some, e ninguém retoma' },
+    nome: 'Ana', codigo: 'D-1', data: '2026-09-09T12:00:00.000Z',
+  };
+  const naTela = htmlDoDiagnostico(montarPlano({ ...corpo, vazamentos: calcularVazamentos(corpo.respostas, 'dentista') }));
+  const noRelatorio = htmlDoDiagnostico(montarPlano(desempacotar(empacotar(corpo))));
+  assert.equal(noRelatorio, naTela);
+  assert.ok(naTela.includes('Onde vaza cliente') && naTela.includes('orçamento'), 'a dor tinha que aparecer nos dois');
 });
 
 console.log('\ngravação na planilha');
