@@ -18,6 +18,60 @@
 import { VAZAMENTOS, FAIXAS, aplicarVocabulario, acharProfissao, resolverQuiz, calcularVazamentos } from './quiz-dados.js';
 
 // ------------------------------------------------------------------------------------------
+// Recomendação de plano. Regra do Vitor (09/09): pelas dores do lead.
+//   - Só dores de centralizar (Fase 1) e de reativar sem métrica -> Brasa resolve.
+//   - Qualquer dor que precisa de IA na primeira resposta (Fase 2), OU qualquer dor de "ter
+//     o número" (cegueira, sem_origem, renovacao_cega) que só o Dashboard entrega -> Chama.
+//   - Volume alto (mais de 30 por semana) somado a conversa sem dono -> operação grande, Fogo.
+// Preços em docs/../Nova Estrutura de Planos.
+// ------------------------------------------------------------------------------------------
+
+export const PLANOS = {
+  brasa: { chave: 'brasa', nome: 'Brasa', preco: 'R$ 447/mês, em contrato anual' },
+  chama: { chave: 'chama', nome: 'Chama', preco: 'R$ 747/mês' },
+  fogo:  { chave: 'fogo',  nome: 'Fogo',  preco: 'R$ 2.500/mês' },
+};
+
+const DORES_QUE_PEDEM_DASHBOARD = new Set(['cegueira', 'sem_origem', 'renovacao_cega']);
+
+const PORQUE_DO_PLANO = {
+  brasa: 'O seu caso é de organização: centralizar o WhatsApp num painel, dar um dono a cada conversa e ter uma lista de quem parou no meio. O plano Brasa cobre isso, com a API Oficial do WhatsApp, o CRM com funil e as campanhas de retomada.',
+  chama: 'As fases acima dependem de um agente de IA respondendo na primeira mensagem e de um painel que te mostre o número que hoje falta. Esses dois são o plano Chama: 3 agentes de IA, o Dashboard de métricas, e tudo o que o Brasa já tem.',
+  fogo:  'Pelo volume que você marcou e por serem várias pessoas no atendimento sem uma divisão clara, o seu caso pede a operação completa: o plano Fogo, com 10 agentes de IA, o roteiro comercial montado pela ORL e as integrações por API.',
+};
+
+function recomendarPlano(vazamentos, respostas) {
+  const r = respostas || {};
+  const semDono = vazamentos.includes('sem_dono') || r.perdeCliente === 'sem_dono';
+  const altoVolume = r.quantos === 'mais30';
+  if (altoVolume && semDono) return 'fogo';
+  const precisaIA = vazamentos.some((d) => FASE_DA_DOR[d] === 2);
+  const precisaDashboard = vazamentos.some((d) => DORES_QUE_PEDEM_DASHBOARD.has(d));
+  if (precisaIA || precisaDashboard) return 'chama';
+  return 'brasa';
+}
+
+// A "conta da meta de 90 dias" (Vitor, 09/09): só multiplica o que o lead deu, 13 semanas no
+// trimestre. Nunca aplica taxa de recuperação inventada. `nao_sei` não tem conta: a meta é ter
+// o número. Os limites batem com as FAIXAS de quiz-dados.js.
+const SEMANAS_EM_90_DIAS = 13;
+const FAIXA_LIMITES = {
+  ate5:    { lo: 5,  hi: 5 },
+  '6a15':  { lo: 6,  hi: 15 },
+  '16a30': { lo: 16, hi: 30 },
+  mais30:  { lo: 30, hi: null },
+};
+
+function contaDe90Dias(quantos) {
+  const lim = FAIXA_LIMITES[quantos];
+  if (!lim) return '';
+  const lo = lim.lo * SEMANAS_EM_90_DIAS;
+  if (lim.hi == null) return `mais de ${lo} pessoas em 90 dias`;
+  if (lim.lo === lim.hi) return `cerca de ${lo} pessoas em 90 dias`;
+  return `de ${lo} a ${lim.hi * SEMANAS_EM_90_DIAS} pessoas em 90 dias`;
+}
+
+// ------------------------------------------------------------------------------------------
 // Movimento 4 — as 3 fases do plano de 90 dias. `FASE_DA_DOR` liga cada dor a uma fase; o
 // teste varre todas as dores de todos os nichos e quebra se alguma ficar sem fase.
 // ------------------------------------------------------------------------------------------
@@ -56,8 +110,11 @@ const FASES = [
 
 // ------------------------------------------------------------------------------------------
 // Movimento 5 — Evidência. `fase` liga o item a uma fase do plano; `null` é sempre elegível.
-// Mostra no máximo 3, entre os elegíveis.
+// Mostra no máximo 3, entre os elegíveis. A intro é um dado de instituição de pesquisa (não
+// fornecedor, não depoimento) — Vitor autorizou em 09/09.
 // ------------------------------------------------------------------------------------------
+
+const EVIDENCIA_INTRO = '82% dos donos de pequeno negócio dizem que o WhatsApp é o canal principal de vendas (Sebrae, Pulso dos Pequenos Negócios, 2026). O problema nunca foi o canal. É o que se perde dentro dele.';
 
 const EVIDENCIA = [
   { fase: 1, texto: '**Cada conversa com um dono.** Todas as mensagens num painel só, por fila e prioridade, sem depender do celular de cada pessoa. "Quem já respondeu esse?" deixa de ser pergunta já na primeira semana.' },
@@ -170,9 +227,13 @@ function tituloDaDor(id, prof) {
   return dor ? aplicarVocabulario(dor.titulo, prof) : id;
 }
 
-function tituloDoDiagnostico(vazamentos) {
-  const temCegueira = vazamentos.includes('cegueira');
-  const reais = vazamentos.filter((k) => k !== 'cegueira').length;
+// O título conta o que está VISÍVEL: na tela são no máximo 3 dores (o resto vai no PDF), então
+// contar todas faria a pessoa ler "5 vazamentos" e ver 3 caixas. `completo` (o /relatorio) conta
+// tudo, porque ali tudo aparece.
+function tituloDoDiagnostico(vazamentos, completo) {
+  const lista = completo ? vazamentos : vazamentos.slice(0, 3);
+  const temCegueira = lista.includes('cegueira');
+  const reais = lista.filter((k) => k !== 'cegueira').length;
   const plural = reais === 1 ? 'vazamento' : 'vazamentos';
   if (reais > 0 && temCegueira) return `Seu atendimento tem ${reais} ${plural}, e um ponto cego.`;
   if (reais > 0) return `Seu atendimento tem ${reais} ${plural}.`;
@@ -199,6 +260,9 @@ export function montarPlano(corpo) {
     .filter((k) => ordem.includes(k))
     .sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
 
+  // `completo` = o /relatorio (PDF), que mostra todas as dores. A tela mostra no máximo 3.
+  const completo = !!c.completo;
+
   const faixa = FAIXAS[r.quantos];
 
   // Movimento 1 — espelho
@@ -222,8 +286,8 @@ export function montarPlano(corpo) {
   // Ponto forte — no máximo 2
   const pontoForte = PONTO_FORTE.filter((pf) => pf.quando(r)).slice(0, 2).map((pf) => pf.texto);
 
-  // Movimento 2+3 — dores, no máximo 3
-  const dores = vazamentos.slice(0, 3).map((id) => ({
+  // Movimento 2+3 — dores. Na tela, no máximo 3; no PDF, todas.
+  const dores = (completo ? vazamentos : vazamentos.slice(0, 3)).map((id) => ({
     id,
     titulo: tituloDaDor(id, prof),
     texto: textoDaDor(id, nicho, prof),
@@ -252,13 +316,20 @@ export function montarPlano(corpo) {
     .slice(0, 3)
     .map((e) => aplicarVocabulario(e.texto, prof));
 
-  // Meta dos 90 dias — número só quando o lead deu
-  const meta = faixa
-    ? aplicarVocabulario(`Em 90 dias, recuperar parte das pessoas que hoje te procuram e não fecham (${faixa}), com o atendimento rodando sem você ser o gargalo.`, prof)
-    : aplicarVocabulario('Em 90 dias, ter o número de quantos {plural} escapam por semana e uma rotina que não depende de você lembrar.', prof);
+  // Meta dos 90 dias — a conta é só o que o lead deu, multiplicado por 13 semanas. Sem faixa,
+  // a meta é ter o número.
+  const conta90 = contaDe90Dias(r.quantos);
+  const meta = conta90
+    ? aplicarVocabulario(`Você marcou ${faixa}. Numa conta rápida, isso é ${conta90} que te procuram e não fecham. A meta dos 90 dias: recuperar parte disso, com o atendimento rodando sem você ser o gargalo, e ter o número exato pra saber quanto voltou.`, prof)
+    : aplicarVocabulario('Você não sabe quantos {plural} escapam por semana, então esse é o primeiro número da meta: ter a conta. Em 90 dias, um painel que mostra quantos entram, quantos fecham e onde travam, e uma rotina que não depende de você lembrar.', prof);
 
-  // Movimento 6 — a call
-  let call = 'Numa conversa de 20 minutos a gente abre a CHAMA com o seu caso na tela e monta esse plano de 90 dias com você. É conversa, não demonstração empurrada. Sem compromisso, e quem fecha tem 30 dias de garantia.';
+  // Plano recomendado — pelas dores do lead (Vitor, 09/09)
+  const chavePlano = recomendarPlano(vazamentos, r);
+  const planoRecomendado = { ...PLANOS[chavePlano], porque: aplicarVocabulario(PORQUE_DO_PLANO[chavePlano], prof) };
+
+  // Movimento 6 — a call. A garantia (cancelamento livre em 30 dias) fica na linha .garantia
+  // do renderizador, não repetida aqui.
+  let call = 'Numa conversa de 20 minutos a gente abre a CHAMA com o seu caso na tela e monta esse plano de 90 dias com você. É conversa, não demonstração empurrada, e sem compromisso.';
   if (faixa) call += ` Cada semana assim são ${faixa} que não voltam.`;
 
   const iso = c.data || new Date().toISOString();
@@ -266,7 +337,7 @@ export function montarPlano(corpo) {
   try { databr = new Date(iso).toLocaleDateString('pt-BR'); } catch (e) { /* mantém o iso */ }
 
   return {
-    titulo: tituloDoDiagnostico(vazamentos),
+    titulo: tituloDoDiagnostico(vazamentos, completo),
     profissao: p.label,
     codigo: c.codigo || '',
     nome: c.nome || '',
@@ -275,11 +346,13 @@ export function montarPlano(corpo) {
     pontoForte,
     dores,
     fases,
+    evidenciaIntro: EVIDENCIA_INTRO,
     evidencia,
+    planoRecomendado,
     meta,
     call,
   };
 }
 
-// Exportado só para o teste varrer FASE_DA_DOR e DOR_TEXTO sem reimplementar a lógica.
-export const _plano = { FASE_DA_DOR, DOR_TEXTO, FASES, EVIDENCIA, PONTO_FORTE };
+// Exportado só para o teste varrer as tabelas sem reimplementar a lógica.
+export const _plano = { FASE_DA_DOR, DOR_TEXTO, FASES, EVIDENCIA, PONTO_FORTE, PLANOS, recomendarPlano, contaDe90Dias };

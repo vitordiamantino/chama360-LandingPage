@@ -95,13 +95,22 @@ export function htmlDoDiagnostico(plano, opts = {}) {
 
   const evidencia = (p.evidencia || []).map((t) => `<li>${rico(t)}</li>`).join('');
 
+  const pr = p.planoRecomendado;
+  const planoRec = pr
+    ? `<div class="diag-secao diag-plano">
+         <h3>O plano que resolve o seu caso</h3>
+         <p class="diag-plano-nome"><strong>${esc(pr.nome)}</strong><span>${esc(pr.preco)}</span></p>
+         <p>${esc(pr.porque)}</p>
+       </div>`
+    : '';
+
   const fechamento = `
     <div class="fechamento">
       <h3>O próximo passo</h3>
       <p>${esc(p.call)}</p>
       ${zap ? `<a class="btn-quiz btn-zap" data-whatsapp href="${zap}" target="_blank" rel="noopener">Agendar 20 minutos pelo WhatsApp</a>` : ''}
       ${pdf ? `<a class="btn-quiz btn-texto" id="diag-baixar-pdf" href="${pdf}" target="_blank" rel="noopener">Baixar este diagnóstico em PDF</a>` : ''}
-      <p class="garantia">A conversa é sem compromisso, e quem contrata tem 30 dias de garantia.</p>
+      <p class="garantia">A conversa é sem compromisso, e quem contrata pode cancelar livremente nos primeiros 30 dias.</p>
       <a class="saida" href="/">
         <span class="saida-t">Prefere conhecer a plataforma antes de conversar?</span>
         <span class="saida-s">Ver a CHAMA 360 por dentro: telas, recursos e como funciona</span>
@@ -126,8 +135,10 @@ export function htmlDoDiagnostico(plano, opts = {}) {
         <h3>Seu plano de 90 dias com a CHAMA</h3>
         ${fases}
       </div>
+      ${planoRec}
       <div class="diag-secao diag-evidencia">
         <h3>Por que isso se resolve com a CHAMA e não com disciplina</h3>
+        ${p.evidenciaIntro ? `<p class="diag-evid-intro">${esc(p.evidenciaIntro)}</p>` : ''}
         <ul>${evidencia}</ul>
       </div>
       <div class="diag-secao diag-meta">

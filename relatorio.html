@@ -69,8 +69,10 @@
     alvo.innerHTML = '<p class="carregando">Link inválido ou expirado. Refaça o diagnóstico em <a href="/diagnostico">chama360.com.br/diagnostico</a>.</p>';
   } else {
     // Sem opts: o /relatorio não mostra os botões de WhatsApp e PDF do fechamento (o lead já
-    // veio de lá). montarPlano roda dentro do renderizador e recalcula os vazamentos das
-    // respostas, já que o fragmento não os carrega.
+    // veio de lá). `completo`: aqui aparecem TODAS as dores e o título conta todas, ao
+    // contrário da tela, que corta em 3. montarPlano roda dentro do renderizador e recalcula
+    // os vazamentos das respostas, já que o fragmento não os carrega.
+    dados.completo = true;
     renderDiagnostico(alvo, dados);
     if (dados.codigo) document.title = `Diagnóstico ${dados.codigo} - CHAMA 360`;
   }

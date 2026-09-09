@@ -155,7 +155,25 @@ conferir(
   plano.includes('Dias 1 a 30') && plano.includes('Dias 31 a 60') && plano.includes('Dias 61 a 90'),
   'o plano de 90 dias tem as 3 fases nomeadas',
 );
+
+// Recomendação de plano (Vitor, 09/09): pelas dores. Este caminho do dentista tem dor de IA
+// (orçamento parado, preço sem conversa) -> Chama.
+const planoRec = await textoDe(page, '#diag-doc .diag-plano');
+conferir(/Brasa|Chama|Fogo/.test(planoRec), `o documento recomenda um plano: "${planoRec.slice(0, 90)}"`);
+conferir(planoRec.includes('Chama') && planoRec.includes('747'), 'dor de IA no diagnóstico puxa o plano Chama com o preço');
+
+// A meta é sobre os 90 dias. O dentista deste caminho não respondeu volume (o quiz do nicho
+// não tem a pergunta), então cai na versão "ter a conta"; a conta numérica em si é provada no
+// test-quiz.mjs com um lead que deu a faixa.
+const metaTxt = await textoDe(page, '#diag-doc .diag-meta');
+conferir(/90 dias/i.test(metaTxt), `a meta fala dos 90 dias: "${metaTxt.slice(0, 90)}"`);
+
+// O dado de instituição na evidência.
+conferir((await textoDe(page, '#diag-doc .diag-evidencia')).includes('Sebrae'), 'a evidência abre com o dado do Sebrae');
+
+// A garantia diz o que é.
 conferir((await textoDe(page, '#diag-doc .fechamento')).includes('O próximo passo'), 'o fechamento tem o bloco da call');
+conferir((await textoDe(page, '#diag-doc .garantia')).includes('cancelar livremente'), 'a garantia diz que é cancelamento livre em 30 dias');
 
 const codigo = await textoDe(page, '#diag-codigo');
 conferir(/^D-\d{4}-\d{4}$/.test(codigo), `o código traz letra, dia/mês e quatro dígitos: "${codigo}"`);
@@ -205,8 +223,13 @@ if (mFrag) {
   const relTexto = await textoDe(rel, '#doc');
   conferir(relTexto.includes('Orçamento passado'), 'o /relatorio re-deriva as mesmas dores do nicho, sem receber a lista');
   conferir((await textoDe(rel, '#doc .diag-fases')).includes('Dias 1 a 30'), 'o /relatorio traz o plano de 90 dias');
+  conferir((await textoDe(rel, '#doc .diag-plano')).includes('Chama'), 'o /relatorio traz a mesma recomendação de plano');
   conferir(await rel.locator('.btn-salvar').isVisible(), 'o /relatorio tem o botão de salvar em PDF');
   conferir((await rel.locator('#doc a[data-whatsapp]').count()) === 0, 'o /relatorio não repete o botão de WhatsApp do fechamento');
+  // completo: o PDF mostra TODAS as dores, mais do que os 3 da tela.
+  const relDores = await rel.locator('#doc .vazamentos .vazamento').count();
+  conferir(relDores >= nVaz, `o /relatorio mostra todas as dores (${relDores}), não só as ${nVaz} da tela`);
+  conferir((await textoDe(rel, '#diag-titulo')).match(/\d+/), 'o título do /relatorio conta as dores todas');
   await rel.screenshot({ path: `${SAIDA}/08-relatorio.png`, fullPage: true });
   await rel.close();
 }

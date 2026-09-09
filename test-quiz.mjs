@@ -538,10 +538,66 @@ teste('montarPlano devolve todas as seções, com as fases fechando as dores do 
   assert.ok(Array.isArray(p.evidencia) && p.evidencia.length <= 3 && p.evidencia.length >= 1);
   assert.equal(typeof p.meta, 'string');
   assert.equal(typeof p.call, 'string');
+  assert.equal(typeof p.evidenciaIntro, 'string');
+  assert.ok(p.evidenciaIntro.includes('Sebrae'), 'a evidência abre com o dado do Sebrae');
+  assert.ok(p.planoRecomendado && p.planoRecomendado.nome && p.planoRecomendado.preco && p.planoRecomendado.porque, 'tem plano recomendado com nome, preço e porquê');
+  assert.ok(!p.planoRecomendado.porque.includes('{'), 'sobrou marcador cru no porquê do plano');
   const fechadas = p.fases.flatMap((f) => f.fecha).join(' | ').toLowerCase();
   assert.ok(fechadas.includes('orçamento'), 'a dor orcamento_parado tem que aparecer em alguma fase');
   assert.ok(!p.espelho.join(' ').includes('{'), 'sobrou marcador cru no espelho');
   assert.ok(!p.dores.map((d) => d.texto).join(' ').includes('{'), 'sobrou marcador cru numa dor');
+});
+
+teste('recomendarPlano: só centralizar -> Brasa; IA ou dashboard -> Chama; volume + sem dono -> Fogo', () => {
+  // só dor de centralizar (Fase 1) -> Brasa
+  assert.equal(_plano.recomendarPlano(['sem_dono'], { quantos: '6a15' }), 'brasa');
+  // dor que precisa de IA na primeira resposta (Fase 2) -> Chama
+  assert.equal(_plano.recomendarPlano(['demora'], { quantos: 'ate5' }), 'chama');
+  // não tem o número (precisa do dashboard) -> Chama, mesmo sem dor de IA
+  assert.equal(_plano.recomendarPlano(['cegueira'], { quantos: 'ate5' }), 'chama');
+  // volume alto + conversa sem dono -> Fogo
+  assert.equal(_plano.recomendarPlano(['sem_dono', 'demora'], { quantos: 'mais30' }), 'fogo');
+  // volume alto sem dor de dono -> ainda Chama, não Fogo
+  assert.equal(_plano.recomendarPlano(['demora'], { quantos: 'mais30' }), 'chama');
+  // nenhuma dor -> Brasa
+  assert.equal(_plano.recomendarPlano([], { quantos: 'ate5' }), 'brasa');
+});
+
+teste('a conta de 90 dias é só a faixa vezes 13 semanas, sem taxa inventada', () => {
+  assert.equal(_plano.contaDe90Dias('ate5'), 'cerca de 65 pessoas em 90 dias');
+  assert.equal(_plano.contaDe90Dias('6a15'), 'de 78 a 195 pessoas em 90 dias');
+  assert.equal(_plano.contaDe90Dias('16a30'), 'de 208 a 390 pessoas em 90 dias');
+  assert.equal(_plano.contaDe90Dias('mais30'), 'mais de 390 pessoas em 90 dias');
+  assert.equal(_plano.contaDe90Dias('nao_sei'), '');
+  assert.equal(_plano.contaDe90Dias(undefined), '');
+});
+
+teste('o título conta as dores que APARECEM (3 na tela, todas no PDF)', () => {
+  const corpo = {
+    nome: 'Ana', codigo: 'D-1',
+    respostas: { profissao: 'dentista' },
+    rotulos: {},
+    vazamentos: ['orcamento_parado', 'cadeira_vazia', 'recepcao_afogada', 'sem_retorno', 'preco_sem_conversa'],
+  };
+  const tela = montarPlano(corpo);
+  assert.equal(tela.dores.length, 3, 'a tela corta em 3 dores');
+  assert.ok(tela.titulo.includes('3 vazamentos'), `o título da tela conta 3: "${tela.titulo}"`);
+  const pdf = montarPlano({ ...corpo, completo: true });
+  assert.equal(pdf.dores.length, 5, 'o PDF mostra todas');
+  assert.ok(pdf.titulo.includes('5 vazamentos'), `o título do PDF conta 5: "${pdf.titulo}"`);
+});
+
+teste('a garantia é cancelamento livre em 30 dias, dita uma vez só', () => {
+  const dados = {
+    nome: 'Rui', codigo: 'X-1',
+    respostas: { profissao: 'outra', perdeCliente: 'nao', quantos: 'ate5' },
+    rotulos: {}, vazamentos: [],
+  };
+  const p = montarPlano(dados);
+  assert.ok(!/garantia/.test(p.call), 'a call não repete a garantia (fica na linha .garantia)');
+  const html = htmlDoDiagnostico(p);
+  const ocorrencias = (html.match(/cancelar livremente nos primeiros 30 dias/g) || []).length;
+  assert.equal(ocorrencias, 1, 'a garantia aparece uma vez, e diz o que é');
 });
 
 teste('toda dor de todo nicho tem fase em plano.js', () => {
@@ -610,6 +666,7 @@ teste('lead sem vazamento nenhum ainda recebe plano e call', () => {
   assert.ok(p.dores.length === 1 && p.dores[0].id === 'nenhum');
   assert.ok(p.fases.length === 3 && p.evidencia.length >= 1 && p.call.length > 20);
   assert.ok(p.pontoForte.length >= 1, 'perdeCliente=nao dispara um ponto forte');
+  assert.equal(p.planoRecomendado.chave, 'brasa', 'sem dor, o plano de entrada resolve');
 });
 
 console.log('\nrenderizador do documento (relatorio.js)');
@@ -625,9 +682,23 @@ teste('htmlDoDiagnostico traz as seções e escapa o nome do lead', () => {
   assert.ok(html.includes('Diagnóstico do seu atendimento'), 'sem cabeçalho');
   assert.ok(html.includes('Onde vaza cliente'), 'sem a seção de dores');
   assert.ok(html.includes('Dias 1 a 30'), 'sem o plano de 90 dias');
+  assert.ok(html.includes('O plano que resolve o seu caso'), 'sem a recomendação de plano');
+  assert.ok(html.includes('Sebrae'), 'sem o dado de instituição na evidência');
   assert.ok(html.includes('O próximo passo'), 'sem o bloco da call');
+  assert.ok(html.includes('cancelar livremente nos primeiros 30 dias'), 'a garantia não diz o que é');
   assert.ok(!html.includes('<b>x</b>'), 'não escapou o nome do lead');
   assert.ok(!html.includes('{cliente}') && !html.includes('{plural}'), 'sobrou marcador cru no HTML');
+});
+
+teste('htmlDoDiagnostico traz a conta de 90 dias e o plano recomendado quando há faixa', () => {
+  const html = htmlDoDiagnostico(montarPlano({
+    nome: 'Rui', codigo: 'C-1',
+    respostas: { profissao: 'corretor', perdeCliente: 'outro_antes', quantos: '6a15' },
+    rotulos: { perdeCliente: 'Outro corretor responde antes de mim' },
+    vazamentos: ['corrida_do_primeiro'],
+  }));
+  assert.ok(html.includes('de 78 a 195 pessoas em 90 dias'), 'a conta de 90 dias tem que aparecer no HTML');
+  assert.ok(html.includes('O plano que resolve o seu caso') && html.includes('Chama'), 'a recomendação de plano tem que aparecer');
 });
 
 teste('htmlDoDiagnostico só liga os botões quando recebe os hrefs', () => {
