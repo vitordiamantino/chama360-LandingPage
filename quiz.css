@@ -147,4 +147,6 @@
   .diag-evidencia li:before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--flame);}
   .diag-evidencia strong{color:var(--ink);font-weight:600;}
   .diag-meta p{margin:0;font-size:16px;color:var(--ink);line-height:1.6;}
-  #diag-baixar-pdf{display:block;width:100%;margin-top:10px;}
+  /* botão secundário: lê como ação, não como link solto, mas sem competir com o verde */
+  #diag-baixar-pdf{display:flex;width:100%;margin-top:10px;border:1.5px solid var(--line);color:var(--ink-soft);font-weight:600;}
+  #diag-baixar-pdf:hover{border-color:var(--flame);color:var(--flame-deep);background:#FFF6EF;}

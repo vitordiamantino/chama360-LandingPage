@@ -132,51 +132,56 @@ await page.locator('#captura-enviar').click();
 // falha de gravação não pode travar o lead.
 await page.waitForSelector('#tela-diagnostico:not([hidden])', { timeout: 8000 });
 
-// ---------- diagnóstico ----------
-console.log('\ndiagnóstico');
+// ---------- documento de diagnóstico ----------
+console.log('\ndocumento de diagnóstico');
 const titulo = await textoDe(page, '#diag-titulo');
-const abertura = await textoDe(page, '#diag-abertura');
-const vazamentos = await page.locator('#diag-lista .vazamento').count();
-conferir(titulo.includes('vazamento'), `o título nomeia os vazamentos: "${titulo}"`);
-conferir(vazamentos >= 2, `mostra ${vazamentos} vazamentos, esperado ao menos 2 nesse caminho`);
-conferir(!abertura.includes('{') && !titulo.includes('{'), 'nenhum placeholder cru no diagnóstico');
+const espelho = await textoDe(page, '#diag-doc .diag-espelho');
+const nVaz = await page.locator('#diag-doc .vazamentos .vazamento').count();
+conferir(titulo.includes('vazamento') || titulo.includes('ponto cego'), `o título nomeia o que achou: "${titulo}"`);
+conferir(nVaz >= 1 && nVaz <= 3, `mostra ${nVaz} dores na tela (no máximo 3; o resto vai no PDF)`);
+conferir(!espelho.includes('{') && !titulo.includes('{'), 'nenhum placeholder cru no documento');
+conferir(espelho.length > 40, `o espelho traz a leitura da situação: "${espelho.slice(0, 80)}..."`);
 
-// A prova de que o diagnóstico é o do nicho, e não o genérico: estes títulos só existem nas
+// Prova de que é o documento do nicho dentista, e não o genérico: estes títulos só existem nas
 // dores do dentista. Se o motor tivesse caído no default, viriam "demora" e "sem_dono".
-const doresNaTela = await textoDe(page, '#diag-lista');
-conferir(doresNaTela.includes('Falta sem aviso'), 'o diagnóstico traz a cadeira vazia, que é dor do dentista');
-conferir(doresNaTela.includes('Orçamento passado'), 'o diagnóstico traz o orçamento parado, que é dor do dentista');
+const doresNaTela = await textoDe(page, '#diag-doc .vazamentos');
+conferir(doresNaTela.includes('Falta sem aviso'), 'o documento traz a cadeira vazia, que é dor do dentista');
+conferir(doresNaTela.includes('Orçamento passado'), 'o documento traz o orçamento parado, que é dor do dentista');
 conferir(!doresNaTela.includes('Nenhuma conversa tem dono'), 'nenhuma dor genérica pode vazar para um nicho com quiz próprio');
+
+// O plano de 90 dias com as 3 fases e o bloco da call.
+const plano = await textoDe(page, '#diag-doc .diag-fases');
+conferir(
+  plano.includes('Dias 1 a 30') && plano.includes('Dias 31 a 60') && plano.includes('Dias 61 a 90'),
+  'o plano de 90 dias tem as 3 fases nomeadas',
+);
+conferir((await textoDe(page, '#diag-doc .fechamento')).includes('O próximo passo'), 'o fechamento tem o bloco da call');
 
 const codigo = await textoDe(page, '#diag-codigo');
 conferir(/^D-\d{4}-\d{4}$/.test(codigo), `o código traz letra, dia/mês e quatro dígitos: "${codigo}"`);
 conferir(codigo.length <= 12, `o código cabe nos 12 caracteres da coluna D (${codigo.length})`);
 
-const href = await page.locator('a[data-whatsapp]').first().getAttribute('href');
+const href = await page.locator('#diag-doc a[data-whatsapp]').first().getAttribute('href');
 conferir(href.includes('wa.me/5511981670838'), 'o botão aponta para o WhatsApp certo');
 conferir(decodeURIComponent(href).includes(codigo), 'a mensagem do WhatsApp leva o código do diagnóstico');
 conferir(decodeURIComponent(href).includes('Dentista'), 'a mensagem do WhatsApp leva a profissão');
 conferir(!decodeURIComponent(href).includes('Ana Paula'), 'a mensagem não usa o nome do lead, conforme a regra de primeiro contato');
+conferir(decodeURIComponent(href).includes('/relatorio#d='), 'a mensagem do WhatsApp leva o link do relatório');
 
-// 03/09: enquanto a VSL não é gravada, esta página vai ao ar sem vídeo nenhum. O que precisa
-// ser provado agora é o contrário do que se provava antes: que não sobrou espaço reservado de
-// vídeo na tela, e que o botão do WhatsApp vem logo depois da lista de vazamentos.
-conferir((await page.locator('#player-vsl').count()) === 0, 'nenhum bloco de vídeo sobrou no diagnóstico');
+const pdfHref = await page.locator('#diag-baixar-pdf').getAttribute('href');
+conferir(pdfHref && pdfHref.includes('/relatorio#d='), `o botão "Baixar PDF" abre o /relatorio: "${pdfHref}"`);
+
+// Nenhum resquício de vídeo (a VSL saiu em 03/09 e não voltou).
+conferir((await page.locator('#player-vsl').count()) === 0, 'nenhum bloco de vídeo sobrou no documento');
 conferir(!(await textoDe(page, '#tela-diagnostico')).includes('vídeo'), 'nenhum texto manda assistir a um vídeo que não existe');
-const caixaLista = await page.locator('#diag-lista').boundingBox();
-const caixaBotao = await page.locator('a[data-whatsapp]').first().boundingBox();
-conferir(
-  caixaLista && caixaBotao && caixaBotao.y - (caixaLista.y + caixaLista.height) < 400,
-  `o botão do WhatsApp vem logo depois do diagnóstico (${Math.round(caixaBotao?.y - (caixaLista?.y + caixaLista?.height))}px abaixo da lista)`,
-);
 
-// Quem terminou o quiz e ainda não quer falar com ninguém precisa de uma saída. Sem ela, a
-// única porta depois do diagnóstico é o WhatsApp, e quem não está pronto fecha a aba.
-const saida = page.locator('.saida');
-conferir(await saida.isVisible(), 'existe uma saída para a plataforma depois do diagnóstico');
+// Quem terminou o quiz e ainda não quer falar com ninguém precisa de uma saída, depois do
+// WhatsApp para não concorrer com ele.
+const saida = page.locator('#diag-doc .saida');
+conferir(await saida.isVisible(), 'existe uma saída para a plataforma depois do documento');
 conferir((await saida.getAttribute('href')) === '/', 'a saída aponta para o institucional, que é a home desde o cutover');
 const caixaSaida = await saida.boundingBox();
-const caixaZap = await page.locator('a[data-whatsapp]').first().boundingBox();
+const caixaZap = await page.locator('#diag-doc a[data-whatsapp]').first().boundingBox();
 conferir(caixaSaida && caixaZap && caixaSaida.y > caixaZap.y, 'a saída fica depois do botão do WhatsApp, não concorrendo com ele');
 
 // A atribuição precisa ter sido guardada na entrada, e não só lida no envio.
@@ -187,6 +192,24 @@ conferir(guardado && guardado.origem === 'ig', `a origem da visita foi guardada 
 conferir(guardado && guardado.campanha === 'dentista-dor', 'a campanha da URL foi guardada junto');
 
 await page.screenshot({ path: `${SAIDA}/04-desktop-diagnostico.png`, fullPage: true });
+
+// ---------- /relatorio: o mesmo documento, montado só a partir do fragmento ----------
+console.log('\n/relatorio (documento standalone)');
+const mFrag = decodeURIComponent(href).match(/\/relatorio#d=([A-Za-z0-9_-]+)/);
+conferir(!!mFrag, 'o link do relatório traz um fragmento base64url');
+if (mFrag) {
+  const rel = await ctx.newPage();
+  await rel.goto(`${BASE}/relatorio.html#d=${mFrag[1]}`, { waitUntil: 'networkidle' });
+  await rel.evaluate(() => document.fonts.ready);
+  await rel.waitForSelector('#diag-titulo', { timeout: 8000 });
+  const relTexto = await textoDe(rel, '#doc');
+  conferir(relTexto.includes('Orçamento passado'), 'o /relatorio re-deriva as mesmas dores do nicho, sem receber a lista');
+  conferir((await textoDe(rel, '#doc .diag-fases')).includes('Dias 1 a 30'), 'o /relatorio traz o plano de 90 dias');
+  conferir(await rel.locator('.btn-salvar').isVisible(), 'o /relatorio tem o botão de salvar em PDF');
+  conferir((await rel.locator('#doc a[data-whatsapp]').count()) === 0, 'o /relatorio não repete o botão de WhatsApp do fechamento');
+  await rel.screenshot({ path: `${SAIDA}/08-relatorio.png`, fullPage: true });
+  await rel.close();
+}
 
 // ---------- mobile, outro caminho: equipe sem regra ----------
 console.log('\nmobile, caminho "equipe sem regra"');
@@ -205,7 +228,7 @@ await m.screenshot({ path: `${SAIDA}/05-mobile-abertura.png`, fullPage: true });
 // escolhe de propósito as respostas que acusam cegueira, para conferir que ela aparece primeiro
 // no diagnóstico mesmo tendo sido a última pergunta respondida.
 await responder(m, 'Personal Trainer');
-await responder(m, 'Uma equipe');
+await responder(m, 'Demoro pra responder e ele já fechou');
 const p3m = await textoDe(m, '#quiz-pergunta');
 conferir(p3m.includes('fechar um plano'), `a pergunta 3 é a de plano, do personal: "${p3m}"`);
 await responder(m, 'geralmente à noite');
@@ -226,18 +249,19 @@ await m.locator('#campo-whatsapp').fill('11981670838');
 await m.locator('#captura-enviar').click();
 await m.waitForSelector('#tela-diagnostico:not([hidden])', { timeout: 8000 });
 
-// O título e a lista precisam contar a mesma história: dizer "1 vazamento" com dois itens
-// na tela é o tipo de incoerência que só aparece olhando a captura.
+// A tela mostra no máximo 3 dores (o resto vai no PDF), e a cegueira vem primeiro mesmo
+// tendo sido a última pergunta respondida: é a ordem de `ordemDores`, não a de resposta.
 const tituloM = await textoDe(m, '#diag-titulo');
-const itensM = await m.locator('#diag-lista .vazamento').count();
-const numeroNoTitulo = (tituloM.match(/\d+/) || [null])[0];
-const declarados = (numeroNoTitulo ? Number(numeroNoTitulo) : 0) + (tituloM.includes('ponto cego') ? 1 : 0);
-conferir(declarados === itensM, `o título declara ${declarados} e a lista mostra ${itensM}: "${tituloM}"`);
+const itensM = await m.locator('#diag-doc .vazamentos .vazamento').count();
+conferir(itensM >= 1 && itensM <= 3, `o documento mostra ${itensM} dores (no máximo 3): "${tituloM}"`);
 
-const primeiroVaz = await textoDe(m, '#diag-lista .vazamento h3');
+const primeiroVaz = await textoDe(m, '#diag-doc .vazamentos .vazamento h4');
 conferir(primeiroVaz.includes('número'), `quem não tem número vê a cegueira em primeiro lugar: "${primeiroVaz}"`);
-const aberturaM = await textoDe(m, '#diag-abertura');
-conferir(!aberturaM.includes('undefined') && !aberturaM.includes('NaN'), `a abertura sem faixa não vaza undefined: "${aberturaM}"`);
+const espelhoM = await textoDe(m, '#diag-doc .diag-espelho');
+conferir(
+  !espelhoM.includes('undefined') && !espelhoM.includes('NaN') && !espelhoM.includes('{'),
+  `o espelho sem faixa não vaza lixo: "${espelhoM.slice(0, 80)}..."`,
+);
 await m.screenshot({ path: `${SAIDA}/07-mobile-diagnostico.png`, fullPage: true });
 
 // ---------- páginas de apoio ----------
