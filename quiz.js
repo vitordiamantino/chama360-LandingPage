@@ -9,8 +9,25 @@ import {
 } from './quiz-dados.js';
 import { registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { montarVsl } from './vsl.js';
+import { montarPlano } from './plano.js';
+import { renderDiagnostico as renderDoc, empacotar } from './relatorio.js';
 
 const WHATSAPP = '5511981670838';
+
+// O /relatorio lê o caso no fragmento e nunca no servidor. Base fixa de produção: o link é
+// gravado na planilha e mandado no WhatsApp, então em localhost também aponta para o domínio.
+const RELATORIO_BASE = 'https://chama360.com.br/relatorio#d=';
+
+// Mensagem que o lead manda no wa.me. Curta e humana: o diagnóstico inteiro está no link e no
+// PDF que o atendente devolve. Texto da spec 2026-09-08-texto-do-diagnostico-por-nicho.md.
+function montarTextoWhatsapp({ profLabel, titulo, linkRelatorio, codigo }) {
+  return [
+    'Oi, fiz o diagnóstico no site e queria agendar a conversa de 20 minutos.',
+    `Sou ${profLabel}. ${titulo}`,
+    `Meu diagnóstico completo: ${linkRelatorio}`,
+    `Código ${codigo}`,
+  ].join('\n');
+}
 
 // Qual quiz está em jogo. Enquanto a profissão não foi respondida, é o genérico — que é onde a
 // pergunta 1 mora. Depois dela, passa a ser o do nicho, ou o genérico de novo se aquele nicho
@@ -198,12 +215,55 @@ function calcularDiagnostico() {
 function renderDiagnostico() {
   const prof = estado.respostas.profissao;
   const achados = calcularDiagnostico();
+  const vazamentosReais = achados.filter((k) => k !== 'cegueira').length;
+
+  // Caminho do /diagnostico: o documento inteiro sai do renderizador único (relatorio.js), o
+  // mesmo que a página /relatorio usa. plano.js monta as seções por regra. O institucional (/)
+  // não tem #diag-doc e cai no caminho legado abaixo, com a lista de vazamentos e a VSL.
+  const alvoDoc = el('diag-doc');
+  if (alvoDoc) {
+    const dados = {
+      profissao: prof,
+      respostas: estado.respostas,
+      rotulos: estado.rotulos,
+      nome: estado.nomeLead || '',
+      codigo: estado.codigo,
+      data: new Date().toISOString(),
+      vazamentos: achados,
+    };
+    const plano = montarPlano(dados);
+    const linkRelatorio = RELATORIO_BASE + empacotar(dados); // sem vazamentos: o /relatorio recalcula
+    let texto = montarTextoWhatsapp({
+      profLabel: acharProfissao(prof).label,
+      titulo: plano.titulo,
+      linkRelatorio,
+      codigo: estado.codigo,
+    });
+    // Trava do wa.me: se o fragmento inflar a mensagem, cai na versão mínima. O documento
+    // completo continua na tela e no /relatorio.
+    if (encodeURIComponent(texto).length > 1200) {
+      texto = `Oi, fiz o diagnóstico no site e queria agendar a conversa de 20 minutos.\nCódigo ${estado.codigo}\n${linkRelatorio}`;
+    }
+    const whatsappHref = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
+
+    renderDoc(alvoDoc, plano, { whatsappHref, pdfHref: linkRelatorio });
+    // O innerHTML novo traz botões [data-whatsapp] frescos; religa a medição de clique que o
+    // iniciar() tinha ligado no elemento estático.
+    alvoDoc.querySelectorAll('[data-whatsapp]').forEach((a) => {
+      a.addEventListener('click', () => medir('clique_whatsapp', { codigo: estado.codigo || 'sem_quiz' }));
+    });
+
+    mostrar('diagnostico');
+    medir('quiz_diagnostico_visto', { vazamentos: vazamentosReais, codigo: estado.codigo });
+    return;
+  }
+
+  // ---- caminho legado: index.html (institucional) ----
   const faixa = FAIXAS[estado.respostas.quantos];
 
   // A cegueira aparece na lista mas não é um vazamento: é a falta de instrumento para enxergar
   // qualquer um deles. O título precisa dizer isso, senão ele conta 1 e a lista mostra 2.
   const temCegueira = achados.includes('cegueira');
-  const vazamentosReais = achados.filter((k) => k !== 'cegueira').length;
   const plural = vazamentosReais === 1 ? 'vazamento' : 'vazamentos';
 
   let titulo;
@@ -286,6 +346,7 @@ async function enviar(e) {
     return;
   }
   erro.hidden = true;
+  estado.nomeLead = nome; // o documento do diagnóstico e o /relatorio precisam do nome
 
   estado.enviando = true;
   const botao = el('captura-enviar');
@@ -366,4 +427,4 @@ export function iniciar() {
 }
 
 // Exportado só para o teste conseguir exercitar a árvore sem browser.
-export const _interno = { normalizarWhatsapp, calcularDiagnostico, estado, gerarCodigo, medir };
+export const _interno = { normalizarWhatsapp, calcularDiagnostico, estado, gerarCodigo, medir, montarTextoWhatsapp };

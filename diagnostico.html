@@ -174,7 +174,9 @@
     <div class="wrap estreito">
       <div class="selo">Diagnóstico gratuito</div>
       <h1>Por onde seu atendimento <em>vaza cliente?</em></h1>
-      <p class="sub">Sete perguntas rápidas. No fim você vê onde o seu negócio está perdendo gente no WhatsApp, e o que dá pra fazer com isso.</p>
+      <!-- GATE Vitor: redação primária da spec. Alternativa curta em
+           docs/superpowers/specs/2026-09-08-diagnostico-documento-e-fonte-home-design.md -->
+      <p class="sub">Sete perguntas rápidas. No fim, um diagnóstico personalizado do seu atendimento: onde vaza cliente, um plano de 90 dias pra resolver, e um documento que é seu pra guardar.</p>
 
       <div class="quiz-cartao">
         <div class="barra"><div class="barra-fill" id="quiz-barra-fill"></div></div>
@@ -211,59 +213,13 @@
           </form>
         </div>
 
-        <!-- tela 3: diagnóstico + cta -->
+        <!-- tela 3: documento de diagnóstico + cta.
+             Todo o conteúdo é montado por relatorio.js (renderizador único, o mesmo que a
+             página /relatorio usa) a partir do objeto que plano.js devolve. O bloco da VSL
+             saiu daqui em 03/09; a saída "conhecer a plataforma antes", o código e o
+             fechamento com a garantia vêm do renderizador. -->
         <div id="tela-diagnostico" hidden>
-          <div class="diag-topo">
-            <h2 id="diag-titulo">Seu atendimento tem vazamentos.</h2>
-            <p id="diag-abertura"></p>
-          </div>
-          <div class="quiz-cartao-corpo">
-            <ul class="vazamentos" id="diag-lista"></ul>
-
-            <div class="codigo">
-              <span>Código do seu diagnóstico:</span>
-              <b id="diag-codigo">C-0000</b>
-              <span>guarde, ele abre a conversa no ponto certo</span>
-            </div>
-
-            <!--
-              O bloco da VSL saiu daqui em 03/09, quando esta página passou a receber tráfego pago:
-              enquanto o Orlando não grava, um espaço reservado dizendo "o vídeo entra aqui" custa
-              um degrau entre o diagnóstico e o WhatsApp sem entregar nada em troca. O caminho fica
-              diagnóstico -> botão, direto.
-
-              PARA VOLTAR quando a gravação existir: reponha este bloco (o `#player-vsl` é tudo que
-              o quiz.js procura, e a chamada lá está guardada por `if`), e vsl.js segue intacto com
-              título, legenda e vturbId por profissão.
-
-              <div class="vsl">
-                <h3 id="vsl-titulo">O que fazer com isso, em 2 minutos</h3>
-                <p class="cap" id="vsl-legenda">Orlando, sócio da ORL360, explica por que isso acontece e como a gente resolve.</p>
-                <div class="player" id="player-vsl">
-                  <div class="placeholder">
-                    <div class="play" aria-hidden="true"></div>
-                    O vídeo entra aqui assim que for gravado.
-                  </div>
-                </div>
-              </div>
-            -->
-
-            <div class="fechamento">
-              <p>Se fizer sentido, a gente marca vinte minutos e te mostra a CHAMA 360 funcionando com o seu caso na tela.</p>
-              <a class="btn-quiz btn-zap" data-whatsapp href="https://wa.me/5511981670838" target="_blank" rel="noopener">Agendar reunião pelo WhatsApp</a>
-              <p class="garantia">A conversa é sem compromisso, e quem contrata tem 30 dias de garantia.</p>
-
-              <!--
-                Saída para quem terminou o quiz e ainda não quer falar com ninguém. Sem isto, a
-                única porta depois do diagnóstico é o WhatsApp, e quem não está pronto simplesmente
-                fecha a aba. O destino é o site institucional, que desde o cutover do W7 é a home em /.
-              -->
-              <a class="saida" href="/">
-                <span class="saida-t">Prefere conhecer a plataforma antes de conversar?</span>
-                <span class="saida-s">Ver a CHAMA 360 por dentro: telas, recursos e como funciona</span>
-              </a>
-            </div>
-          </div>
+          <div id="diag-doc"></div>
         </div>
 
       </div>

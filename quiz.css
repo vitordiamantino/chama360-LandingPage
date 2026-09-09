@@ -121,3 +121,30 @@
   .saida-t{display:block;font-weight:600;font-size:15.5px;color:var(--ink);margin-bottom:3px;}
   .saida-t:after{content:" →";color:var(--flame-deep);}
   .saida-s{display:block;font-size:14px;color:var(--ink-mute);line-height:1.45;}
+
+  /* documento de diagnóstico (relatorio.js) — /diagnostico e /relatorio.
+     Reaproveita .diag-topo, .vazamentos, .codigo, .fechamento, .garantia, .saida acima. */
+  .diag-cab{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,247,242,.62);margin:0 0 12px;line-height:1.5;}
+  .diag-cab span{display:block;margin-top:4px;font-weight:500;letter-spacing:.03em;text-transform:none;font-size:13.5px;color:rgba(250,247,242,.8);}
+  .diag-secao{margin:24px 0 0;}
+  .diag-secao > h3{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);margin:0 0 12px;}
+  .diag-espelho{margin-top:0;padding:22px 0 4px;}
+  .diag-espelho p{margin:0 0 10px;font-size:16.5px;line-height:1.6;color:var(--ink);}
+  .diag-espelho p:last-child{margin-bottom:0;color:var(--ink-soft);}
+  .ponto-forte{background:#F1F7F2;border:1px solid #CFE6D4;border-radius:11px;padding:16px 18px;}
+  .ponto-forte h3{color:var(--ok);}
+  .ponto-forte p{margin:0 0 8px;font-size:15px;color:var(--ink-soft);}
+  .ponto-forte p:last-child{margin-bottom:0;}
+  .vazamento h4{font-size:18px;margin:0 0 5px;}
+  .vazamento p{margin:0;color:var(--ink-soft);font-size:15.5px;line-height:1.55;}
+  .diag-fase{padding:14px 0;border-bottom:1px solid var(--line-soft);}
+  .diag-fase:last-child{border-bottom:none;}
+  .diag-fase h4{font-size:16px;margin:0 0 6px;color:var(--flame-deep);}
+  .diag-fase p{margin:0;font-size:15px;color:var(--ink-soft);line-height:1.55;}
+  .diag-fecha{margin-top:8px !important;font-size:14px !important;color:var(--ink) !important;font-weight:500;}
+  .diag-evidencia ul{list-style:none;margin:0;padding:0;display:grid;gap:11px;}
+  .diag-evidencia li{font-size:15px;color:var(--ink-soft);line-height:1.55;padding-left:16px;position:relative;}
+  .diag-evidencia li:before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--flame);}
+  .diag-evidencia strong{color:var(--ink);font-weight:600;}
+  .diag-meta p{margin:0;font-size:16px;color:var(--ink);line-height:1.6;}
+  #diag-baixar-pdf{display:block;width:100%;margin-top:10px;}
