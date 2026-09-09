@@ -19,9 +19,12 @@
 import { google } from 'googleapis';
 import { QUIZ_POR_NICHO, PERGUNTAS, acharProfissao } from '../quiz-dados.js';
 import { montarAbordagem } from '../abordagem.js';
+import { empacotar } from '../relatorio.js';
 
 const COLUNAS_MESTRE = 'A:AB';   // AA e AB entraram no W2: respostas_json e a lista de perguntas
 const UMA_HORA = 60 * 60 * 1000;
+// Base fixa de produção: o link é aberto pelo atendente e pelo lead, nunca em localhost.
+const RELATORIO_BASE = 'https://chama360.com.br/relatorio#d=';
 
 // Limitador em memória da instância, no espírito do api/_lib/limiteEnvio.js da MBN. Não é
 // distribuído e não pretende ser: segura a rajada barata vinda de poucas origens, que é o caso
@@ -134,6 +137,40 @@ export function montarLinha(corpo, agoraISO) {
     // da mesma blindagem aplicada aqui na saída, não só nos campos de entrada.
     protegerFormula(montarAbordagem(corpo)),   // AA Abordagem (mensagem pronta pra mandar)
     limparTexto(corpo.nicho, 30),              // AB  Qual lista de perguntas o lead respondeu
+  ];
+}
+
+// ------------------------------------------------------------------------------------------
+// Aba 'Diagnósticos' — uma linha por lead com a mensagem pronta e o link do relatório, para
+// quem atende filtrar pelo código, copiar a mensagem e devolver o PDF. Não substitui a
+// mestre nem a aba do nicho: é a visão de quem opera o atendimento.
+// ------------------------------------------------------------------------------------------
+
+export const CABECALHO_DIAGNOSTICO = [
+  'Data e hora', 'Nome', 'WhatsApp', 'Código', 'Profissão', 'Mensagem pronta', 'Link do relatório',
+];
+
+// Monta o fragmento #d= do mesmo jeito que o quiz.js monta no cliente: só o mínimo para o
+// /relatorio re-derivar (profissão, respostas, rótulos, nome, código, data). Sem WhatsApp.
+export function montarLinhaDiagnostico(corpo, agoraISO) {
+  const rot = corpo.rotulos || {};
+  const r = corpo.respostas || {};
+  const frag = empacotar({
+    profissao: r.profissao,
+    respostas: corpo.respostas,
+    rotulos: corpo.rotulos,
+    nome: corpo.nome,
+    codigo: corpo.codigo,
+    data: agoraISO,
+  });
+  return [
+    agoraISO,                                     // A  Data e hora
+    limparTexto(corpo.nome, 80),                  // B  Nome
+    `'${normalizarWhatsapp(corpo.whatsapp)}`,     // C  WhatsApp (aspa simples, como na mestre)
+    limparTexto(corpo.codigo, 12),                // D  Código
+    limparTexto(rot.profissao, 60),              // E  Profissão (label)
+    protegerFormula(montarAbordagem(corpo)),      // F  Mensagem pronta (mesma da coluna AA)
+    `${RELATORIO_BASE}${frag}`,                   // G  Link do relatório (montado aqui, não é entrada do usuário)
   ];
 }
 
@@ -271,6 +308,21 @@ export default async function handler(req, res) {
       } catch (e2) {
         console.error('[quiz] aba do nicho falhou (lead já está na mestre):', e2 && e2.message);
       }
+    }
+
+    // 3. Aba 'Diagnósticos': mensagem pronta + link do relatório, para quem atende. Try/catch
+    //    próprio, nunca derruba a requisição: o lead já está na mestre.
+    try {
+      await garantirAba(sheets, spreadsheetId, 'Diagnósticos', CABECALHO_DIAGNOSTICO, abas);
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: 'Diagnósticos!A:A',
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [montarLinhaDiagnostico(corpo, agoraISO)] },
+      });
+    } catch (e3) {
+      console.error('[quiz] aba Diagnósticos falhou (lead já está na mestre):', e3 && e3.message);
     }
 
     return res.status(200).json({ ok: true, codigo: limparTexto(corpo.codigo, 12) });

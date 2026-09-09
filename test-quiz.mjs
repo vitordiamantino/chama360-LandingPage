@@ -14,7 +14,7 @@ import {
   PERGUNTAS, PRIMEIRA_PERGUNTA, PROFISSOES, VAZAMENTOS, aplicarVocabulario,
   QUIZ_POR_NICHO, resolverQuiz, FAIXAS, calcularVazamentos,
 } from './quiz-dados.js';
-import { montarLinha, abaDoNicho, cabecalhoNicho, montarLinhaNicho } from './api/quiz.js';
+import { montarLinha, abaDoNicho, cabecalhoNicho, montarLinhaNicho, montarLinhaDiagnostico, CABECALHO_DIAGNOSTICO } from './api/quiz.js';
 import { extrairParametros, decidirAtribuicao, registrarVisita, lerAtribuicao } from './atribuicao.js';
 import { _interno } from './quiz.js';
 import { VSL_POR_PROFISSAO, resolverVsl } from './vsl.js';
@@ -895,6 +895,34 @@ teste('nicho de camada 2 e quiz genérico não geram cabeçalho de aba', () => {
   assert.equal(cabecalhoNicho('advogado'), null);
   assert.equal(cabecalhoNicho('default'), null);
   assert.equal(cabecalhoNicho(undefined), null);
+});
+
+teste('a linha de Diagnósticos tem código, mensagem pronta e link do relatório', () => {
+  const corpo = {
+    nome: 'Ana', whatsapp: '11999999999', codigo: 'D-0809-1234',
+    respostas: { profissao: 'dentista', perdeCliente: 'orcamento', quantos: '6a15' },
+    rotulos: { profissao: 'Dentista', perdeCliente: 'Passa orçamento, o paciente some, e ninguém retoma' },
+    nicho: 'dentista', vazamentos: ['orcamento_parado'],
+  };
+  const linha = montarLinhaDiagnostico(corpo, '2026-09-08T12:00:00.000Z');
+  assert.equal(linha.length, CABECALHO_DIAGNOSTICO.length, 'linha e cabeçalho têm que ter o mesmo tamanho');
+  assert.equal(linha[0], '2026-09-08T12:00:00.000Z', 'A é a data e hora que a rota passou');
+  assert.equal(linha[3], 'D-0809-1234', 'D é o código');
+  assert.equal(linha[2], "'5511999999999", 'C é o WhatsApp normalizado com aspa à frente');
+  assert.ok(String(linha[5]).length > 10, 'F é a mensagem pronta');
+  assert.match(String(linha[6]), /^https:\/\/chama360\.com\.br\/relatorio#d=/, 'G é o link do relatório');
+  // o fragmento tem que voltar a ser lido: prova que empacotar rodou no servidor
+  const frag = String(linha[6]).split('#d=')[1];
+  assert.ok(frag && frag.length > 10 && !/[+/=]/.test(frag), 'o fragmento é base64url');
+});
+
+teste('a linha de Diagnósticos não vaza fórmula do Sheets na mensagem', () => {
+  const corpo = {
+    nome: '=SOMA(A1:A9)', whatsapp: '11999999999', codigo: 'X-1',
+    respostas: { profissao: 'outra' }, rotulos: { profissao: 'Outro' }, vazamentos: [],
+  };
+  const linha = montarLinhaDiagnostico(corpo, '2026-09-08T12:00:00.000Z');
+  assert.ok(!String(linha[5]).startsWith('='), 'a mensagem pronta começaria com = e viraria fórmula');
 });
 
 console.log('\natribuição de criativo');
