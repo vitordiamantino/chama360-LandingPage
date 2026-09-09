@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seu diagnóstico CHAMA 360</title>
+<!-- Página privada por lead, aberta por link com os dados no fragmento. Não indexa, não
+     circula como link público, e não carrega medição nenhuma: não conta como visita. -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="assets/icone-chama360.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="quiz.css">
+<style>
+  :root{
+    --paper:#FAF7F2; --paper-2:#F3EEE5; --paper-3:#EDE6DA;
+    --ink:#0E0B08; --ink-soft:#3A3026; --ink-mute:#7A6E5F;
+    --line:rgba(14,11,8,0.12); --line-soft:rgba(14,11,8,0.07);
+    --flame:#E8590C; --flame-deep:#C43C08; --flame-bright:#F5A623; --ember:#8C1F0B;
+    --gold:#F2C230;
+    --ok:#1E7A46;
+    --sans:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --radius:14px;
+    --sombra:0 1px 2px rgba(14,11,8,.05), 0 12px 32px -12px rgba(14,11,8,.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{font-family:var(--sans);font-weight:600;letter-spacing:-.015em;margin:0;line-height:1.12;}
+  .pg{max-width:720px;margin:0 auto;padding:24px 20px 60px;}
+  .btn-salvar{
+    display:block;margin:0 0 18px auto;font:inherit;font-weight:600;font-size:15px;
+    background:var(--ink);color:#fff;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;
+  }
+  .btn-salvar:hover{filter:brightness(1.15);}
+  #doc{background:#fff;}
+  #doc .carregando{padding:40px 24px;color:var(--ink-mute);text-align:center;}
+  #doc .carregando a{color:var(--flame-deep);}
+
+  @media print{
+    body{background:#fff;}
+    .pg{max-width:none;padding:0;}
+    .btn-salvar{display:none;}
+    #doc{border:none !important;box-shadow:none !important;}
+    /* fundo escuro do cabeçalho não imprime bem; vira claro na folha */
+    .diag-topo{background:#fff !important;color:#000 !important;padding:0 0 16px !important;border-bottom:2px solid #000;}
+    .diag-topo h2,.diag-cab,.diag-cab span{color:#000 !important;}
+    .diag-secao,.diag-fase,.vazamento{break-inside:avoid;}
+    .fechamento .btn-quiz,.saida{display:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="pg">
+  <button type="button" class="btn-salvar" onclick="window.print()">Salvar em PDF</button>
+  <main id="doc" class="quiz-cartao">
+    <p class="carregando">Carregando seu diagnóstico...</p>
+  </main>
+</div>
+
+<script type="module">
+  import { desempacotar, renderDiagnostico } from './relatorio.js';
+
+  const alvo = document.getElementById('doc');
+  const dados = desempacotar(location.hash);
+
+  if (!dados || !dados.respostas) {
+    alvo.innerHTML = '<p class="carregando">Link inválido ou expirado. Refaça o diagnóstico em <a href="/diagnostico">chama360.com.br/diagnostico</a>.</p>';
+  } else {
+    // Sem opts: o /relatorio não mostra os botões de WhatsApp e PDF do fechamento (o lead já
+    // veio de lá). montarPlano roda dentro do renderizador e recalcula os vazamentos das
+    // respostas, já que o fragmento não os carrega.
+    renderDiagnostico(alvo, dados);
+    if (dados.codigo) document.title = `Diagnóstico ${dados.codigo} - CHAMA 360`;
+  }
+</script>
+</body>
+</html>

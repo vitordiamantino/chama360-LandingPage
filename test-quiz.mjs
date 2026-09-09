@@ -1091,6 +1091,15 @@ teste('/diagnostico serve o funil do quiz, e a home serve o institucional (W7 pa
   assert.match(home, /class="plan-name"/, 'a home não tem os planos: não é o institucional');
 });
 
+teste('/relatorio é página privada: noindex, sem medição, e fora do sitemap', () => {
+  assert.ok(fs.existsSync('relatorio.html'), 'relatorio.html sumiu: o link do PDF vira 404');
+  const h = fs.readFileSync('relatorio.html', 'utf8');
+  assert.match(h, /<meta name="robots" content="noindex/i, '/relatorio precisa ser noindex');
+  assert.ok(!h.includes('medicao.js'), '/relatorio não conta como visita: sem GA4, Pixel ou Clarity');
+  assert.ok(h.includes('relatorio.js') && h.includes('desempacotar'), '/relatorio não monta o documento');
+  assert.ok(!fs.readFileSync('sitemap.xml', 'utf8').includes('/relatorio'), 'página privada por lead não entra no sitemap');
+});
+
 teste('/sobre continua resolvendo, agora como redirect para a home', () => {
   // A rota foi aposentada no cutover, mas está indexada e circula em link antigo. Sem o
   // redirect ela vira 404 e leva junto o que o Google já tinha acumulado nela.
