@@ -125,7 +125,7 @@
   /* documento de diagnóstico (relatorio.js) — /diagnostico e /relatorio.
      Reaproveita .diag-topo, .vazamentos, .codigo, .fechamento, .garantia, .saida acima. */
   .diag-cab{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,247,242,.62);margin:0 0 12px;line-height:1.5;}
-  .diag-cab span{display:block;margin-top:4px;font-weight:500;letter-spacing:.03em;text-transform:none;font-size:13.5px;color:rgba(250,247,242,.8);}
+  .diag-cab span{display:block;margin-top:5px;font-weight:500;letter-spacing:.03em;text-transform:none;font-size:15.5px;color:rgba(250,247,242,.85);}
   .diag-secao{margin:24px 0 0;}
   .diag-secao > h3{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);margin:0 0 12px;}
   .diag-espelho{margin-top:0;padding:22px 0 4px;}
