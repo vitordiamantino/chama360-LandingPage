@@ -16,6 +16,7 @@
         --line-soft:rgba(14,11,8,.07);--flame:#E8590C;--flame-deep:#C43C08;
         --serif:'Instrument Serif',Georgia,serif;--sans:'Geist',-apple-system,'Segoe UI',Arial,sans-serif;}
   *{box-sizing:border-box;}
+  .ck-mudar{font:inherit;color:var(--flame-deep);background:none;border:0;padding:6px 0;text-decoration:underline;text-underline-offset:3px;cursor:pointer;touch-action:manipulation;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased;}
   .wrap{max-width:720px;margin:0 auto;padding:0 20px;}
   h1,h2{font-family:var(--serif);font-weight:400;letter-spacing:-.015em;line-height:1.12;margin:0;}
@@ -54,7 +55,7 @@
 <main>
   <div class="wrap">
     <h1>Política de Privacidade</h1>
-    <p class="data">Última atualização: 25 de agosto de 2026</p>
+    <p class="data">Última atualização: 26 de novembro de 2026</p>
 
     <p>Esta política explica o que a CHAMA 360, produto da <strong>ORL360VISAO LTDA</strong>, faz com os dados de quem preenche o diagnóstico neste site. Ela vale para este site. O uso da plataforma contratada é regido pelo contrato assinado por cada cliente.</p>
 
@@ -88,13 +89,15 @@
       <tr><th style="width:34%">Quem</th><th>Para quê</th></tr>
       <tr><td>Google (Sheets e Analytics)</td><td>Armazenamento das respostas e medição de audiência.</td></tr>
       <tr><td>Meta (Pixel)</td><td>Medição e otimização dos anúncios que trazem visitas a este site.</td></tr>
-      <tr><td>Microsoft (Clarity)</td><td>Mapa de calor e gravação de sessão, para entendermos onde a página confunde.</td></tr>
+      <tr><td>Microsoft (Clarity)</td><td>Mapa de calor e gravação de sessão, para entendermos onde a página confunde. Só é ligado se você aceitar no aviso de cookies.</td></tr>
       <tr><td>Vercel</td><td>Hospedagem do site.</td></tr>
     </table>
     <p>Esses serviços podem tratar dados fora do Brasil. Ao usar este site você concorda com essa transferência internacional, feita conforme as políticas de privacidade de cada um deles.</p>
 
     <h2>Cookies e medição</h2>
-    <p>Este site usa cookies e tecnologias parecidas para medir audiência e desempenho de anúncios. Você pode bloquear cookies nas configurações do seu navegador. O diagnóstico continua funcionando com os cookies bloqueados.</p>
+    <p>Este site usa cookies e tecnologias parecidas para medir audiência e desempenho de anúncios (Google Analytics e Meta Pixel). Você pode bloquear cookies nas configurações do seu navegador. O diagnóstico continua funcionando com os cookies bloqueados.</p>
+    <p>A gravação da navegação pelo Microsoft Clarity (cliques e rolagem) só começa se você tocar em <strong>Aceitar</strong> no aviso que aparece na primeira visita. Se tocar em <strong>Recusar</strong>, ela não é ligada. A sua escolha fica guardada só no seu navegador.</p>
+    <p>Quer mudar a escolha? <button type="button" id="ck-mudar" class="ck-mudar">Perguntar de novo</button> <span id="ck-pronto" role="status"></span></p>
 
     <h2>Por quanto tempo guardamos</h2>
     <p>Guardamos os dados do diagnóstico enquanto durar o relacionamento comercial e por até <strong>24 meses</strong> após o último contato. Depois disso eles são apagados ou anonimizados, salvo obrigação legal de guarda.</p>
@@ -124,6 +127,13 @@
     </nav>
   </div>
 </footer>
+<script>
+  // Esquece a escolha do aviso de cookies: o aviso volta na próxima página do site (ver medicao.js).
+  document.getElementById('ck-mudar').addEventListener('click', function () {
+    try { localStorage.removeItem('chama-gravacao'); } catch (e) { /* sem armazenamento: não há escolha guardada */ }
+    document.getElementById('ck-pronto').textContent = 'Pronto. Vamos perguntar de novo quando você abrir o site.';
+  });
+</script>
 
 </body>
 </html>
